@@ -1,0 +1,32 @@
+{
+  "name": "oma-api",
+  "version": "0.0.1",
+  "description": "",
+  "main": "server.js",
+  "engines": {
+    "node": "8.4.0"
+  },
+  "dependencies": {
+    "express": "^4.15.5",
+    "lodash": "^4.17.4",
+    "n3": "^0.11.3"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.14.109",
+    "@types/node": "^10.3.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/open-music-archive/oma-api.git"
+  },
+  "author": "florianthalmann",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/open-music-archive/oma-api/issues"
+  },
+  "homepage": "https://github.com/open-music-archive/oma-api#readme"
+}
