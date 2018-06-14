@@ -7,5 +7,5 @@ $ npm install
 
 run:
 ```bash
-$ node server.js
+$ npm start
 ```
