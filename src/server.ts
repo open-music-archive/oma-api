@@ -17,7 +17,17 @@ app.get('/records', (req, res) => {
 
 app.listen(PORT, () => {
   console.log('open music archive server started at http://localhost:' + PORT);
-  store.addRecord('test', [1,2,3])
-  //store.addRecord('test2', [1,2,3])
-  //store.writeStoreToRdf('dump.ttl');
+  addTestRecord();
 });
+
+function addTestRecord() {
+  store.addRecord({
+    title: "The Carnival of Venice",
+    composer: "Benedict - arr. James",
+    artist: "Harry James and his Orchestra",
+    id: "R 2848",
+    label: "Parlophone",
+    side: "A",
+    soundObjects: []
+  })
+}

@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as _ from 'lodash';
 import * as N3 from 'n3';
+import { Record } from './types';
 
 const RDF = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
 const TYPE = RDF+"type";
@@ -11,15 +12,17 @@ const RECORD = MO+"Record";
 const NAME = MO+"name";
 
 const OMA = "http://example.com/oma/vocabulary/";
+const DUMP_PATH = 'dump.ttl';
 
 const store = N3.Store();
-readFromRDF('dump.ttl');
+readFromRDF(DUMP_PATH);
 
 
-export function addRecord(name: string, segmentTimes: number[]) {
+export function addRecord(record: Record) {
   const id = store.createBlankNode();
   store.addTriple(id, TYPE, RECORD);
-  store.addTriple(id, NAME, name);
+  store.addTriple(id, NAME, record.title);
+  writeToRdf(DUMP_PATH);
 }
 
 export function getRecords(): Promise<string[]> {
