@@ -1,4 +1,4 @@
-import { DymoStore, DymoGenerator, forAll, uris } from 'dymo-core';
+//import { DymoStore, DymoGenerator, forAll, uris } from 'dymo-core';
 import { Record } from './types';
 
 const ONTOLOGIES_PATH = 'https://raw.githubusercontent.com/semantic-player/dymo-core/master/ontologies/';

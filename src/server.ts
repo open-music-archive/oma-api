@@ -16,7 +16,7 @@ app.use((req, res, next) => {
 });
 
 app.post('/record', (req, res) => {
-  res.send(store.addRecord(req.body));
+  res.send(store.addRecordSide(req.body));
 });
 
 app.get('/records', (req, res) => {
@@ -25,13 +25,13 @@ app.get('/records', (req, res) => {
 
 app.listen(PORT, () => {
   console.log('open music archive server started at http://localhost:' + PORT);
-  //addTestRecord();
+  addTestRecordSide();
   //const testRecord = JSON.parse(fs.readFileSync('./test/chunks.json', 'utf8'));
   //textures.generateLoop(testRecord);
 });
 
-function addTestRecord() {
-  store.addRecord({
+function addTestRecordSide() {
+  store.addRecordSide({
     title: "The Carnival of Venice",
     composer: "Benedict - arr. James",
     artist: "Harry James and his Orchestra",
