@@ -92,11 +92,11 @@ export function addRecordSide(record: Record) {
     n3store.addTriple(soundObjectSignal_uri, OMA+"record_side", recordSide_uri);
 
     n3store2.addTriple(interval_2_uri, TL+"beginsAtDuration", literal(`PT${item.time}S`, "duration")); // hidden graph
+  
+  }
 
   addClustering(null)
-  
 
-  }
   writeToRdf(DUMP_PATH, n3store);
   writeToRdf(DUMP_PATH_2, n3store2);
 }
@@ -129,13 +129,14 @@ export function addClustering(clustering){
   clustering = {  features: ["MFCC", "Chroma"],
                   clusters: [{  signals: ["A0", "A1", "A2"],
                                 name: "cluster1" },
-                             {  signals: ["A0", "A1", "A2"],
-                                name: "cluster1" }]
+                             {  signals: ["B0", "B1", "B2"],
+                                name: "cluster2" }]
 
   }
 
   // this is not yet working
   const clustering_bnode = bNode();
+
   n3store.addTriple(clustering_bnode, TYPE, OMA+"Clustering");
 
   for (let item of clustering.features) { 
@@ -145,6 +146,7 @@ export function addClustering(clustering){
   for (let cluster of clustering.clusters) {
     const cluster_bnode = bNode();
     n3store.addTriple(cluster_bnode, TYPE, OMA+"Cluster");
+    n3store.addTriple(clustering_bnode, OMA+"has_cluster", cluster_bnode);
 
     for (let signal of cluster.signals) {
       n3store.addTriple(cluster_bnode, OMA+"has_signal", OMAD+signal);
