@@ -134,7 +134,6 @@ export function addClustering(clustering){
 
   }
 
-  // this is not yet working
   const clustering_bnode = bNode();
 
   n3store.addTriple(clustering_bnode, TYPE, OMA+"Clustering");
