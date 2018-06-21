@@ -145,6 +145,8 @@ export function addClustering(clustering){
   for (let cluster of clustering.clusters) {
     const cluster_bnode = bNode();
     n3store.addTriple(cluster_bnode, TYPE, OMA+"Cluster");
+    n3store.addTriple(cluster_bnode, LABEL, literal(cluster.name, "string"));
+
     n3store.addTriple(clustering_bnode, OMA+"has_cluster", cluster_bnode);
 
     for (let signal of cluster.signals) {
