@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as _ from 'lodash';
 import * as N3 from 'n3';
-import { Record } from './types';
+import { Record, Fragment } from './types';
 import * as uuidv4 from 'uuid/v4';
 
 
@@ -43,14 +43,15 @@ const prefixes = {  dc: 'http://purl.org/dc/elements/1.1/',
 
 // guids for blank nodes, shuffle before serialising
 export function addRecordSide(record: Record) {
+  
 
-  const recordSide_bnode = bNode();
-  n3store.addTriple(recordSide_bnode, TYPE, OMA+"RecordSide");
-  n3store.addTriple(recordSide_bnode, NAME, literal("A", "string"));
+  const recordSide_uri = OMAD+guid();
+  n3store.addTriple(recordSide_uri, TYPE, OMA+"RecordSide");
+  n3store.addTriple(recordSide_uri, NAME, literal("A", "string"));
 
   const recordPlayback_uri = OMAD+guid();
   n3store.addTriple(recordPlayback_uri, TYPE, OMA+"RecordPlayback");
-  n3store.addTriple(recordPlayback_uri, OMA+"record_side", recordSide_bnode);
+  n3store.addTriple(recordPlayback_uri, OMA+"record_side_played", recordSide_uri);
 
   const signal_1_uri = OMAD+guid();
   n3store.addTriple(signal_1_uri, TYPE, MO+"Signal");
@@ -72,26 +73,87 @@ export function addRecordSide(record: Record) {
   n3store.addTriple(interval_1_bnode, TYPE, TL+"Interval");
   n3store.addTriple(interval_1_bnode, TL+"timeline", timeline_bnode);
 
+  n3store2.addTriple("audio_no_eq.wav", MO+"encodes", signal_1_uri); // hidden graph
+
   // sound object
-  const interval_2_uri = OMAD+guid();
-  n3store.addTriple(interval_2_uri, TYPE, TL+"Interval");
-  n3store.addTriple(interval_2_uri, TL+"timeline", timeline_bnode);
-  n3store.addTriple(interval_2_uri, TL+"duration", literal("PT0.25S", "duration"));
+  var interval_2_uri;
+  var soundObjectSignal_uri;
 
-  const soundObjectSignal_uri = OMAD+guid();
-  n3store.addTriple(soundObjectSignal_uri, TYPE, OMA+"SoundObjectSignal");
-  n3store.addTriple(soundObjectSignal_uri, MO+"time", interval_2_uri);
-  n3store.addTriple(soundObjectSignal_uri, OMA+"feature_document_guid", literal("feature_doc_guid", "string"));
-  n3store.addTriple("audio_sound_object.wav", MO+"encodes", soundObjectSignal_uri);
+  for (let item of exampleFragments()) {
+    interval_2_uri = OMAD+guid();
+    n3store.addTriple(interval_2_uri, TYPE, TL+"Interval");
+    n3store.addTriple(interval_2_uri, TL+"timeline", timeline_bnode);
+    n3store.addTriple(interval_2_uri, TL+"duration", literal(`PT${item.duration}S`, "duration"));
+    soundObjectSignal_uri = OMAD+guid();
+    n3store.addTriple(soundObjectSignal_uri, TYPE, OMA+"SoundObjectSignal");
+    n3store.addTriple(soundObjectSignal_uri, MO+"time", interval_2_uri);
+    n3store.addTriple(soundObjectSignal_uri, OMA+"feature_document_guid", literal(item.feature_guid, "string"));
+    n3store.addTriple(item.fileUri, MO+"encodes", soundObjectSignal_uri);
+    n3store.addTriple(soundObjectSignal_uri, OMA+"record_side", recordSide_uri);
 
-  // hidden graph
-  n3store2.addTriple(interval_2_uri, TL+"beginsAtDuration", literal("PT10.34S", "duration"));
-  n3store2.addTriple("audio_no_eq.wav", MO+"encodes", signal_1_uri);
+    n3store2.addTriple(interval_2_uri, TL+"beginsAtDuration", literal(`PT${item.time}S`, "duration")); // hidden graph
 
-  //writeToRdf(DUMP_PATH)
+  addClustering(null)
+  
 
+  }
   writeToRdf(DUMP_PATH, n3store);
   writeToRdf(DUMP_PATH_2, n3store2);
+}
+
+export function exampleFragments() {
+  let f1 = {  time: 12.3,
+              duration: 0.1,
+              fileUri: "so1.wav",
+              feature_guid: "feature_doc_guid_001"
+            };
+  let f2 = {  time: 22.5,
+              duration: 0.12,
+              fileUri: "so2.wav",
+              feature_guid: "feature_doc_guid_002" };
+  let f3 = {  time: 32.3,
+              duration: 0.25,
+              fileUri: "so3.wav",
+              feature_guid: "feature_doc_guid_003" };
+  return [f1, f2, f3]
+
+}
+
+
+export function addClustering(clustering){
+  // get all instances of SoundObjectSignal
+  // make clustering
+  // query for Clustering with :used_feature as in featureTypes
+  // delete Clustering and Cluster instances
+
+  clustering = {  features: ["MFCC", "Chroma"],
+                  clusters: [{  signals: ["A0", "A1", "A2"],
+                                name: "cluster1" },
+                             {  signals: ["A0", "A1", "A2"],
+                                name: "cluster1" }]
+
+  }
+
+  // this is not yet working
+  const clustering_bnode = bNode();
+  n3store.addTriple(clustering_bnode, TYPE, OMA+"Clustering");
+
+  for (let item of clustering.features) { 
+    n3store.addTriple(clustering_bnode, OMA+"used_feature", OMA+item);
+  }
+
+  for (let cluster of clustering.clusters) {
+    const cluster_bnode = bNode();
+    n3store.addTriple(cluster_bnode, TYPE, OMA+"Cluster");
+
+    for (let signal of cluster.signals) {
+      n3store.addTriple(cluster_bnode, OMA+"has_signal", OMAD+signal);
+    }
+
+  }
+
+
+
 }
 
 export function getRecords(): Promise<string[]> {

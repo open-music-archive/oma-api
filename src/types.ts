@@ -21,3 +21,14 @@ export interface FeatureSummary {
   mean: number | number[],
   var: number | number[]
 }
+
+export interface Clustering {
+  name: string[], 
+  features: string[],
+  clusters: Cluster[] 
+}
+
+export interface Cluster {
+  name: string,
+  signals: string[]
+}
