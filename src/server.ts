@@ -3,7 +3,7 @@ import * as bodyParser from 'body-parser';
 import * as fs from 'fs';
 import * as store from './store';
 import * as textures from './textures';
-import { Record } from './types';
+import { RecordSide } from './types';
 
 const PORT = process.env.PORT || 8060;
 
@@ -25,6 +25,7 @@ app.get('/records', (req, res) => {
 
 app.listen(PORT, () => {
   console.log('open music archive server started at http://localhost:' + PORT);
+  //store.poop();
   addTestRecordSide();
   //const testRecord = JSON.parse(fs.readFileSync('./test/chunks.json', 'utf8'));
   //textures.generateLoop(testRecord);

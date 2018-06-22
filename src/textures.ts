@@ -1,9 +1,9 @@
 //import { DymoStore, DymoGenerator, forAll, uris } from 'dymo-core';
-import { Record } from './types';
+import { RecordSide } from './types';
 
 const ONTOLOGIES_PATH = 'https://raw.githubusercontent.com/semantic-player/dymo-core/master/ontologies/';
 
-export async function generateLoop(record: Record) {
+export async function generateLoop(recordSide: RecordSide) {
   //console.log(record.soundObjects[0]);
   //init
   //let store = new DymoStore();
