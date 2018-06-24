@@ -4,7 +4,6 @@ import * as N3 from 'n3';
 import { RecordSide, Fragment, Clustering } from './types';
 import * as uuidv4 from 'uuid/v4';
 
-
 const OMA = "http://openmusicarchive.org/vocabulary/";
 const MO = "http://purl.org/ontology/mo/";
 const RDF = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
@@ -39,17 +38,10 @@ const prefixes = {  dc: 'http://purl.org/dc/elements/1.1/',
                     afx: 'https://w3id.org/aufx/ontology/2.0/' 
                   }
 
-
-
-
 export function poop(){
   return null;
-
-  
   
 }
-
-
 
 // guids for blank nodes, shuffle before serialising
 export function addRecordSide(recordSide: RecordSide) {
@@ -65,11 +57,8 @@ export function addRecordSide(recordSide: RecordSide) {
   */
 
   readFromRDF(DUMP_PATH);
-
   
   return 0;
-
-
 
   const recordSideUri = OMAD+guid();
 
@@ -91,9 +80,6 @@ export function addRecordSide(recordSide: RecordSide) {
 
   n3store.addTriple(releaseUri, OMA+"catalogue_number", literal(recordSide.catNo, "string"));
 
-  
-
-
   const labelUri = OMAD+guid();
   n3store.addTriple(labelUri, TYPE, MO+"Label");
   n3store.addTriple(releaseUri, MO+"record_label", labelUri);
@@ -107,7 +93,6 @@ export function addRecordSide(recordSide: RecordSide) {
     label = t2.object;
   }
   console.log(label);
-
 
 
   const recordPlaybackUri = OMAD+guid();
@@ -155,7 +140,6 @@ export function addRecordSide(recordSide: RecordSide) {
 
     n3store2.addTriple(interval2Uri, TL+"beginsAtDuration", literal(`PT${item.time}S`, "duration")); // hidden graph
   
-    
   }
 
   addClustering(null)
@@ -167,8 +151,6 @@ export function addRecordSide(recordSide: RecordSide) {
     label = t2.object;
   }
   
-
-
   writeToRdf(DUMP_PATH, n3store);
   writeToRdf(DUMP_PATH_2, n3store2);
 }
@@ -193,13 +175,11 @@ export function exampleFragments() {
 
 function addClustering(clustering){
 
-
   clustering = {  features: ["MFCC", "Chroma"],
                   clusters: [{  signals: ["A0", "A1", "A2"],
                                 name: "cluster1" },
                              {  signals: ["B0", "B1", "B2"],
                                 name: "cluster2" }]
-
   }
 
   const clusteringBnode = bnode();
@@ -245,8 +225,9 @@ function readFromRDF(path: string): Promise<null> {
     const streamParser = N3.StreamParser();
     const rdfStream = fs.createReadStream(path);
     rdfStream.pipe(streamParser);
-    streamParser.on('data', triple => n3store.addTriple(triple));
-    streamParser.on('data', triple => console.log(triple));
+    streamParser.on('data', triple => { n3store.addTriple(triple);
+                                        console.log(triple) });
+    //streamParser.on('data', triple => console.log(triple));
     streamParser.on('end', resolve());
   });
 }
