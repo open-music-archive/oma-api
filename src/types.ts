@@ -2,7 +2,7 @@ export interface RecordSide {
   title: string,
   composer: string,
   artist: string,
-  id: string,
+  catNo: string,
   label: string,
   side: string,
   soundObjects: Fragment[]

@@ -42,15 +42,13 @@ const prefixes = {  dc: 'http://purl.org/dc/elements/1.1/',
 
 
 
-export async function poop(){
-  console.log(n3store.size);
-  let r = await readFromRDF(DUMP_PATH);
-  console.log(n3store.size);
+export function poop(){
+  return null;
+
+  
+  
 }
 
-//var parser = N3.Parser(),
-//    rdfStream = fs.createReadStream(DUMP_PATH);
-//parser.parse(rdfStream, console.log);
 
 
 // guids for blank nodes, shuffle before serialising
@@ -60,11 +58,18 @@ export function addRecordSide(recordSide: RecordSide) {
   title: string,
   composer: string,
   artist: string,
-  id: string,
+  catNo: string,
   label: string,
   side: string,
   soundObjects: Fragment[]}
   */
+
+  readFromRDF(DUMP_PATH);
+
+  
+  return 0;
+
+
 
   const recordSideUri = OMAD+guid();
 
@@ -75,6 +80,34 @@ export function addRecordSide(recordSide: RecordSide) {
   n3store.addTriple(artistUri, TYPE, MO+"MusicArtist");
   n3store.addTriple(recordSideUri, OMA+"artist", artistUri);
   n3store.addTriple(artistUri, FOAF+"name", literal(recordSide.artist, "string"));
+
+  const itemUri = OMAD+guid();
+  n3store.addTriple(itemUri, TYPE, OMA+"RecordItem");
+  n3store.addTriple(recordSideUri, OMA+"side_of", itemUri);
+
+  const releaseUri = OMAD+guid();
+  n3store.addTriple(releaseUri, TYPE, MO+"Release");
+  n3store.addTriple(releaseUri, MO+"item", itemUri);
+
+  n3store.addTriple(releaseUri, OMA+"catalogue_number", literal(recordSide.catNo, "string"));
+
+  
+
+
+  const labelUri = OMAD+guid();
+  n3store.addTriple(labelUri, TYPE, MO+"Label");
+  n3store.addTriple(releaseUri, MO+"record_label", labelUri);
+  n3store.addTriple(labelUri, LABEL, literal(recordSide.label, "string"));
+
+
+  var label;
+  var t1 = n3store.getTriples(null, MO+"record_label", null)[0];
+  if (t1){
+    var t2 = n3store.getTriples(t1.object, LABEL, null)[0];
+    label = t2.object;
+  }
+  console.log(label);
+
 
 
   const recordPlaybackUri = OMAD+guid();
@@ -122,9 +155,19 @@ export function addRecordSide(recordSide: RecordSide) {
 
     n3store2.addTriple(interval2Uri, TL+"beginsAtDuration", literal(`PT${item.time}S`, "duration")); // hidden graph
   
+    
   }
 
   addClustering(null)
+
+  var label;
+  var t1 = n3store.getTriples(null, MO+"record_label", null)[0];
+  if (t1){
+    var t2 = n3store.getTriples(t1.object, LABEL, null)[0];
+    label = t2.object;
+  }
+  
+
 
   writeToRdf(DUMP_PATH, n3store);
   writeToRdf(DUMP_PATH_2, n3store2);
@@ -148,7 +191,7 @@ export function exampleFragments() {
 }
 
 
-export function addClustering(clustering){
+function addClustering(clustering){
 
 
   clustering = {  features: ["MFCC", "Chroma"],
@@ -203,6 +246,7 @@ function readFromRDF(path: string): Promise<null> {
     const rdfStream = fs.createReadStream(path);
     rdfStream.pipe(streamParser);
     streamParser.on('data', triple => n3store.addTriple(triple));
+    streamParser.on('data', triple => console.log(triple));
     streamParser.on('end', resolve());
   });
 }

@@ -36,7 +36,7 @@ function addTestRecordSide() {
     title: "The Carnival of Venice",
     composer: "Benedict - arr. James",
     artist: "Harry James and his Orchestra",
-    id: "R 2848",
+    catNo: "R 2848",
     label: "Parlophone",
     side: "A",
     soundObjects: []
