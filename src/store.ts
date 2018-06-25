@@ -16,7 +16,6 @@ const FOAF = 'http://xmlns.com/foaf/0.1/';
 
 const TYPE = RDF+"type";
 const LABEL = RDFS+"label";
-//const NAME = MO+"name";
 
 const DUMP_PATH = 'dump.ttl';
 const DUMP_PATH_2 = 'dump_2.ttl';
@@ -25,26 +24,52 @@ const n3store = N3.Store();
 const n3store2 = N3.Store();
 
 const prefixes = {  dc: 'http://purl.org/dc/elements/1.1/',
-                    mo: 'http://purl.org/ontology/mo/' ,
-                    tl: 'http://purl.org/NET/c4dm/timeline.owl#' ,
                     owl: 'http://www.w3.org/2002/07/owl#' ,
-                    oma: 'http://openmusicarchive.org/vocabulary/' ,
-                    rdf: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#' ,
-                    rdfs: 'http://www.w3.org/2000/01/rdf-schema#' ,
                     xml: 'http://www.w3.org/XML/1998/namespace' ,
-                    xsd: 'http://www.w3.org/2001/XMLSchema#' ,
-                    foaf: 'http://xmlns.com/foaf/0.1/', 
-                    omad: 'http://openmusicarchive.org/data/',
-                    afx: 'https://w3id.org/aufx/ontology/2.0/' 
+                    mo: MO ,
+                    tl: TL ,
+                    oma: OMA ,
+                    rdf: RDF ,
+                    rdfs: RDFS ,
+                    xsd: XSD ,
+                    foaf: FOAF, 
+                    omad: OMAD,
+                    afx: AFX 
                   }
 
-export function poop(){
-  return null;
+const ready = Promise.all([readFromRDF(DUMP_PATH, n3store), readFromRDF(DUMP_PATH_2, n3store2)]);
+
+
+function checkExisting(cType, lString, predicate){
+  // check if entity exists, e.g. for record label:
+  // cType = MO+"Label"
+  // lString = recordSide.label
+  // predicate = LABEL
+
+  let flag = 0;
+  let guri = OMAD+guid();
+  var t1 = n3store.getSubjects(null, TYPE, cType) // not working!
+  if (t1){
+    t1.forEach(function(t) {
+      let t2 = n3store.getObjects(t, predicate, null)[0];
+      if (t2 == literal(lString, "string")){
+        guri = t;
+        flag = 1;
+        return;
+      }
+    });
+
+  if (flag == 0){
+    n3store.addTriple(guri, TYPE, cType);
+    n3store.addTriple(guri, predicate, literal(lString, "string"));
+  }
+
+
   
 }
-
+                  
 // guids for blank nodes, shuffle before serialising
-export function addRecordSide(recordSide: RecordSide) {
+export async function addRecordSide(recordSide: RecordSide) {
   /*
   RecordSide {
   title: string,
@@ -56,10 +81,15 @@ export function addRecordSide(recordSide: RecordSide) {
   soundObjects: Fragment[]}
   */
 
-  readFromRDF(DUMP_PATH);
-  
-  return 0;
+  await ready;
+  console.log(n3store.size);
+  console.log(n3store2.size);
 
+
+  //checkExisting(MO+"Label", recordSide.label, LABEL)
+
+  //return;
+  
   const recordSideUri = OMAD+guid();
 
   n3store.addTriple(recordSideUri, TYPE, OMA+"RecordSide");
@@ -80,19 +110,31 @@ export function addRecordSide(recordSide: RecordSide) {
 
   n3store.addTriple(releaseUri, OMA+"catalogue_number", literal(recordSide.catNo, "string"));
 
-  const labelUri = OMAD+guid();
-  n3store.addTriple(labelUri, TYPE, MO+"Label");
-  n3store.addTriple(releaseUri, MO+"record_label", labelUri);
-  n3store.addTriple(labelUri, LABEL, literal(recordSide.label, "string"));
+  // check if record label with rdfs:label already exists
 
+  checkExisting(MO+"Label", recordSide.label, LABEL)
 
-  var label;
-  var t1 = n3store.getTriples(null, MO+"record_label", null)[0];
+  let labelFlag = 0;
+  let recordLabelUri = OMAD+guid();
+  var t1 = n3store.getObjects(null, MO+"record_label", null);
+  //var t1 = n3store.getSubjects(null, TYPE, MO+"Label");
   if (t1){
-    var t2 = n3store.getTriples(t1.object, LABEL, null)[0];
-    label = t2.object;
+    t1.forEach(function(t) {
+      t2 = n3store.getObjects(t, LABEL, null)[0];
+      if (t2 == literal(recordSide.label, "string")){
+        recordLabelUri = t;
+        labelFlag = 1;
+        return;
+      }
+    });
+  };
+  if (labelFlag == 0){
+    n3store.addTriple(recordLabelUri, TYPE, MO+"Label");
+    n3store.addTriple(recordLabelUri, LABEL, literal(recordSide.label, "string"));
   }
-  console.log(label);
+
+  //console.log(recordLabelUri);
+  n3store.addTriple(releaseUri, MO+"record_label", recordLabelUri);
 
 
   const recordPlaybackUri = OMAD+guid();
@@ -153,6 +195,7 @@ export function addRecordSide(recordSide: RecordSide) {
   
   writeToRdf(DUMP_PATH, n3store);
   writeToRdf(DUMP_PATH_2, n3store2);
+  
 }
 
 export function exampleFragments() {
@@ -174,16 +217,14 @@ export function exampleFragments() {
 
 
 function addClustering(clustering){
-
   clustering = {  features: ["MFCC", "Chroma"],
-                  clusters: [{  signals: ["A0", "A1", "A2"],
+                  clusters: [{  signalsAdd: ["A0", "A1", "A2"],
                                 name: "cluster1" },
-                             {  signals: ["B0", "B1", "B2"],
+                             {  signalsAdd: ["B0", "B1", "B2"],
                                 name: "cluster2" }]
   }
 
   const clusteringBnode = bnode();
-
   n3store.addTriple(clusteringBnode, TYPE, OMA+"Clustering");
 
   for (let item of clustering.features) { 
@@ -194,10 +235,9 @@ function addClustering(clustering){
     const clusterBnode = bnode();
     n3store.addTriple(clusterBnode, TYPE, OMA+"Cluster");
     n3store.addTriple(clusterBnode, LABEL, literal(cluster.name, "string"));
-
     n3store.addTriple(clusteringBnode, OMA+"has_cluster", clusterBnode);
 
-    for (let signal of cluster.signals) {
+    for (let signal of cluster.signalsAdd) {
       n3store.addTriple(clusterBnode, OMA+"has_signal", OMAD+signal);
     }
   }
@@ -220,15 +260,13 @@ function guid(){
   return g.replace(/\-/gi,"").replace(g.charAt(0), String.fromCharCode(97+Math.floor(Math.random() * 6)));
 }
 
-function readFromRDF(path: string): Promise<null> {
+function readFromRDF(path: string, store): Promise<null> {
   return new Promise((resolve, reject) => {
     const streamParser = N3.StreamParser();
     const rdfStream = fs.createReadStream(path);
     rdfStream.pipe(streamParser);
-    streamParser.on('data', triple => { n3store.addTriple(triple);
-                                        console.log(triple) });
-    //streamParser.on('data', triple => console.log(triple));
-    streamParser.on('end', resolve());
+    streamParser.on('data', triple => { store.addTriple(triple); });
+    streamParser.on('end', resolve);
   });
 }
 
