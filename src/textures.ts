@@ -1,19 +1,17 @@
-//import { DymoStore, DymoGenerator, forAll, uris } from 'dymo-core';
+import { DymoManager, DymoGenerator, forAll, uris } from 'dymo-core';
 import { Record } from './types';
 
 const ONTOLOGIES_PATH = 'https://raw.githubusercontent.com/semantic-player/dymo-core/master/ontologies/';
 
-export async function generateLoop(record: Record) {
+export async function generateLoop(): Promise<string> {
   //console.log(record.soundObjects[0]);
-  //init
-  //let store = new DymoStore();
-  /*let dymoGen = new DymoGenerator(store);
-  await store.loadOntologies(this.ONTOLOGIES_PATH);
-
-  //find some cool sound objects
-  //TODO: for now just the longest ones
+  const manager = new DymoManager();
+  const dymoGen = new DymoGenerator(manager.getStore());
+  //TODO: find some cool sound objects
+  const audio = 'http://www.openmusicarchive.org/playitagain/7f0988fd-9c26-4823-a9f6-5820c0b36043/2c5570ba-03c9-4b0b-9cb3-8148d802976d.wav';
   //add files
-  dymoGen.addDymo(undefined, 'loop.wav');
+  await dymoGen.addDymo(undefined, audio);
   //serialize
-  let jsonld = dymoGen.getRenderingJsonld();*/
+  return dymoGen.getTopDymoJsonld();
+  //console.log(jsonld);
 }

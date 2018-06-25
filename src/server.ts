@@ -23,6 +23,10 @@ app.get('/records', (req, res) => {
   res.send(store.getRecords());
 });
 
+app.get('/texture', async (req, res) => {
+  res.send(await textures.generateLoop());
+});
+
 app.listen(PORT, () => {
   console.log('open music archive server started at http://localhost:' + PORT);
   addTestRecordSide();
