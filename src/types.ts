@@ -1,8 +1,8 @@
-export interface Record {
+export interface RecordSide {
   title: string,
   composer: string,
   artist: string,
-  id: string,
+  catNo: string,
   label: string,
   side: string,
   soundObjects: Fragment[]
@@ -11,9 +11,10 @@ export interface Record {
 export interface Fragment {
   time: number,
   duration: number,
-  vector: number[],
+  normalFeatures: number[],
   fileUri: string,
-  features: FeatureSummary[]
+  features: FeatureSummary[],
+  featureGuid: string
 }
 
 export interface FeatureSummary {
@@ -23,12 +24,14 @@ export interface FeatureSummary {
 }
 
 export interface Clustering {
-  name: string[], 
   features: string[],
+  method: string,
   clusters: Cluster[] 
 }
 
 export interface Cluster {
   name: string,
-  signals: string[]
+  signalsAdd: string[],
+  signalsDelete: string[],
+  centroid: number[]
 }

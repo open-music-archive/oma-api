@@ -1,5 +1,5 @@
 import { DymoManager, DymoGenerator, forAll, uris } from 'dymo-core';
-import { Record } from './types';
+import { RecordSide } from './types';
 
 const ONTOLOGIES_PATH = 'https://raw.githubusercontent.com/semantic-player/dymo-core/master/ontologies/';
 
