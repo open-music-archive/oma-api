@@ -66,7 +66,7 @@ function checkExisting(cType, lString, predicate){
 
 
   
-}
+}}
                   
 // guids for blank nodes, shuffle before serialising
 export async function addRecordSide(recordSide: RecordSide) {
@@ -86,9 +86,9 @@ export async function addRecordSide(recordSide: RecordSide) {
   console.log(n3store2.size);
 
 
-  //checkExisting(MO+"Label", recordSide.label, LABEL)
+  checkExisting(MO+"Label", recordSide.label, LABEL)
 
-  //return;
+  return;
   
   const recordSideUri = OMAD+guid();
 
