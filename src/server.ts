@@ -52,7 +52,7 @@ function addTestRecordSide() {
     label: "Parlophone",
     side: "A",
     soundObjects: [],
-    imageUri: "www.example.com/example.jpg"
+    imageUri: "http://www.example.com/example.jpg"
   })
 }
 
