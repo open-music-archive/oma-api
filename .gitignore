@@ -7,3 +7,4 @@ lib
 *.ttl
 
 test
+src/config.js

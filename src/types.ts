@@ -1,3 +1,5 @@
+import { ObjectID } from 'mongodb';
+
 export interface RecordSide {
   title: string,
   composer: string,
@@ -5,14 +7,14 @@ export interface RecordSide {
   catNo: string,
   label: string,
   side: string,
-  soundObjects: Fragment[]
+  soundObjects: SoundObject[]
 }
 
-export interface Fragment {
+export interface SoundObject {
   time: number,
   duration: number,
   normalFeatures: number[],
-  fileUri: string,
+  audioUri: string,
   features: FeatureSummary[],
   featureGuid: string
 }
@@ -26,7 +28,7 @@ export interface FeatureSummary {
 export interface Clustering {
   features: string[],
   method: string,
-  clusters: Cluster[] 
+  clusters: Cluster[]
 }
 
 export interface Cluster {
@@ -34,4 +36,14 @@ export interface Cluster {
   signalsAdd: string[],
   signalsDelete: string[],
   centroid: number[]
+}
+
+//MONGO DB TYPES
+
+export interface DbSoundObjectFeatures {
+  _id: ObjectID,
+  duration: number,
+  normalFeatures: number[],
+  audioUri: string,
+  features: FeatureSummary[]
 }
