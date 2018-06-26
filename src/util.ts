@@ -1,4 +1,5 @@
-import { SoundObject, DbSoundObjectFeatures } from './types';
+import { SoundObject } from './types';
+import { DbSoundObjectFeatures } from './db-types';
 
 export function toDbFeatures(soundObject: SoundObject): DbSoundObjectFeatures {
   return {

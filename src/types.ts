@@ -1,5 +1,3 @@
-import { ObjectID } from 'mongodb';
-
 export interface RecordSide {
   title: string,
   composer: string,
@@ -36,14 +34,4 @@ export interface Cluster {
   signalsAdd: string[],
   signalsDelete: string[],
   centroid: number[]
-}
-
-//MONGO DB TYPES
-
-export interface DbSoundObjectFeatures {
-  _id: ObjectID,
-  duration: number,
-  normalFeatures: number[],
-  audioUri: string,
-  features: FeatureSummary[]
 }

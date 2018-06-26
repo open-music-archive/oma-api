@@ -1,6 +1,6 @@
 import { MongoClient, Db, ObjectID } from 'mongodb';
 import { URL } from './config';
-import { DbSoundObjectFeatures } from './types';
+import { DbSoundObjectFeatures } from './db-types';
 
 const FEATURES = "soundObjectFeatures";
 
