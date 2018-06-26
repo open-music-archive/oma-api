@@ -2,6 +2,8 @@ import * as express from 'express';
 import * as bodyParser from 'body-parser';
 import * as fs from 'fs';
 import * as store from './store';
+import * as featureDb from './feature-db';
+import { toDbFeatures } from './util';
 import * as textures from './textures';
 import { RecordSide } from './types';
 
@@ -15,8 +17,12 @@ app.use((req, res, next) => {
   next();
 });
 
-app.post('/record', (req, res) => {
-  res.send(store.addRecordSide(req.body));
+app.post('/record', async (req, res) => {
+  const side = <RecordSide>req.body;
+  const docIds = await Promise.all(side.soundObjects
+    .map(o => featureDb.insertFeatures(toDbFeatures(o))));
+  side.soundObjects.forEach((o,i) => o.featureGuid = docIds[i].toHexString());
+  res.send(store.addRecordSide(side));
 });
 
 app.get('/records', (req, res) => {
@@ -27,9 +33,12 @@ app.get('/texture', async (req, res) => {
   res.send(await textures.generateLoop());
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
+  await featureDb.connect();
   console.log('open music archive server started at http://localhost:' + PORT);
-  addTestRecordSide();
+  //await addTestFeature();
+  //console.log(JSON.stringify(await featureDb.getAllFeatures(), null, 2));
+  //addTestRecordSide();
   //const testRecord = JSON.parse(fs.readFileSync('./test/chunks.json', 'utf8'));
   //textures.generateLoop(testRecord);
 });
@@ -45,4 +54,14 @@ function addTestRecordSide() {
     soundObjects: [],
     imageUri: "www.example.com/example.jpg"
   })
+}
+
+async function addTestFeature() {
+  const docId = await featureDb.insertFeatures({
+    _id: undefined,
+    duration: Math.random(),
+    normalFeatures: [Math.random()],
+    audioUri: Math.random()+".wav",
+    features: [{name: "amp", mean: Math.random(), var: Math.random()}]
+  });
 }

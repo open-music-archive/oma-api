@@ -10,7 +10,8 @@ export async function generateLoop(): Promise<string> {
   //TODO: find some cool sound objects
   const audio = 'http://www.openmusicarchive.org/playitagain/7f0988fd-9c26-4823-a9f6-5820c0b36043/2c5570ba-03c9-4b0b-9cb3-8148d802976d.wav';
   //add files
-  await dymoGen.addDymo(undefined, audio);
+  const d0 = await dymoGen.addDymo(undefined, audio);
+  await dymoGen.setDymoParameter(d0, uris.DELAY, 1);
   //serialize
   return dymoGen.getTopDymoJsonld();
   //console.log(jsonld);

@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as _ from 'lodash';
 import * as N3 from 'n3';
-import { RecordSide, Fragment, Clustering } from './types';
+import { RecordSide, SoundObject, Clustering } from './types';
 import * as uuidv4 from 'uuid/v4';
 
 const OMA = "http://openmusicarchive.org/vocabulary/";
@@ -32,9 +32,9 @@ const prefixes = {  dc: 'http://purl.org/dc/elements/1.1/',
                     rdf: RDF ,
                     rdfs: RDFS ,
                     xsd: XSD ,
-                    foaf: FOAF, 
+                    foaf: FOAF,
                     omad: OMAD,
-                    afx: AFX 
+                    afx: AFX
                   }
 //writeToRdf(DUMP_PATH, n3store);
 //writeToRdf(DUMP_PATH_2, n3store2);
@@ -112,7 +112,7 @@ export async function addRecordSide(recordSide: RecordSide) {
   catNo: string,
   label: string,
   side: string,
-  soundObjects: Fragment[]}
+  soundObjects: SoundObject[]}
   */
 
   await ready;
@@ -185,7 +185,7 @@ export async function addRecordSide(recordSide: RecordSide) {
   var interval2Uri;
   var soundObjectSignalUri;
 
-  for (let item of exampleFragments()) {
+  for (let item of exampleSoundObjects()) {
     interval2Uri = OMAD+guid();
     n3store.addTriple(interval2Uri, TYPE, TL+"Interval");
     n3store.addTriple(interval2Uri, TL+"timeline", timelineBnode);
@@ -198,7 +198,7 @@ export async function addRecordSide(recordSide: RecordSide) {
     n3store.addTriple(soundObjectSignalUri, OMA+"record_side", recordSideUri);
 
     n3store2.addTriple(interval2Uri, TL+"beginsAtDuration", literal(`PT${item.time}S`, "duration")); // hidden graph
-  
+
   }
 
   addClustering(null)
@@ -219,7 +219,7 @@ function writeStores(){
   writeToRdf(DUMP_PATH_2, n3store2);
 }
 
-export function exampleFragments() {
+export function exampleSoundObjects() {
   let f1 = {  time: 12.3,
               duration: 0.1,
               fileUri: "so1.wav",
@@ -248,7 +248,7 @@ function addClustering(clustering){
   const clusteringBnode = bnode();
   n3store.addTriple(clusteringBnode, TYPE, OMA+"Clustering");
 
-  for (let item of clustering.features) { 
+  for (let item of clustering.features) {
     n3store.addTriple(clusteringBnode, OMA+"used_feature", OMA+item);
   }
 

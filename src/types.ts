@@ -5,15 +5,14 @@ export interface RecordSide {
   catNo: string,
   label: string,
   side: string,
-  soundObjects: Fragment[],
-  imageUri: string
+  soundObjects: SoundObject[]
 }
 
-export interface Fragment {
-  //time: number,
+export interface SoundObject {
+  time: number,
   duration: number,
   normalFeatures: number[],
-  fileUri: string,
+  audioUri: string,
   features: FeatureSummary[],
   featureGuid: string
 }
@@ -27,7 +26,7 @@ export interface FeatureSummary {
 export interface Clustering {
   features: string[],
   method: string,
-  clusters: Cluster[] 
+  clusters: Cluster[]
 }
 
 export interface Cluster {
