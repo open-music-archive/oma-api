@@ -29,7 +29,6 @@ app.get('/texture', async (req, res) => {
 
 app.listen(PORT, () => {
   console.log('open music archive server started at http://localhost:' + PORT);
-  //store.poop();
   addTestRecordSide();
   //const testRecord = JSON.parse(fs.readFileSync('./test/chunks.json', 'utf8'));
   //textures.generateLoop(testRecord);
@@ -43,6 +42,7 @@ function addTestRecordSide() {
     catNo: "R 2848",
     label: "Parlophone",
     side: "A",
-    soundObjects: []
+    soundObjects: [],
+    imageUri: "www.example.com/example.jpg"
   })
 }
