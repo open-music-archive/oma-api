@@ -36,11 +36,12 @@ const prefixes = {  dc: 'http://purl.org/dc/elements/1.1/',
                     omad: OMAD,
                     afx: AFX 
                   }
-
+//writeToRdf(DUMP_PATH, n3store);
+//writeToRdf(DUMP_PATH_2, n3store2);
 const ready = Promise.all([readFromRDF(DUMP_PATH, n3store), readFromRDF(DUMP_PATH_2, n3store2)]);
 
 
-function checkExisting(cType, lString, predicate){
+function checkExisting(cType, predicate, lString){
   // check if entity exists, e.g. for record label:
   // cType = MO+"Label"
   // lString = recordSide.label
@@ -48,23 +49,22 @@ function checkExisting(cType, lString, predicate){
 
   let flag = 0;
   let guri = OMAD+guid();
-  var t1 = n3store.getSubjects(null, TYPE, cType) // not working!
-  if (t1){
-    t1.forEach(function(t) {
-      let t2 = n3store.getObjects(t, predicate, null)[0];
-      if (t2 == literal(lString, "string")){
-        guri = t;
+  var s = n3store.getSubjects(TYPE, cType);
+  if (s){
+    s.forEach(function(i) {
+      let o = n3store.getObjects(i, predicate)[0];
+      if (o == literal(lString, "string")){
+        guri = i;
         flag = 1;
         return;
       }
     });
-
   if (flag == 0){
     n3store.addTriple(guri, TYPE, cType);
     n3store.addTriple(guri, predicate, literal(lString, "string"));
   }
-
-
+  console.log(cType, guri);
+  return [guri, flag]
   
 }}
                   
@@ -85,10 +85,12 @@ export async function addRecordSide(recordSide: RecordSide) {
   console.log(n3store.size);
   console.log(n3store2.size);
 
-
-  checkExisting(MO+"Label", recordSide.label, LABEL)
-
-  return;
+  // check if release already exists
+  const checkRelease = checkExisting(MO+"Release", OMA+"catalogue_number", recordSide.catNo);
+  const releaseUri = checkRelease[0]
+  if (checkRelease[1] == 1){
+    console.log("Release already exists in database")
+  }
   
   const recordSideUri = OMAD+guid();
 
@@ -104,38 +106,10 @@ export async function addRecordSide(recordSide: RecordSide) {
   n3store.addTriple(itemUri, TYPE, OMA+"RecordItem");
   n3store.addTriple(recordSideUri, OMA+"side_of", itemUri);
 
-  const releaseUri = OMAD+guid();
-  n3store.addTriple(releaseUri, TYPE, MO+"Release");
-  n3store.addTriple(releaseUri, MO+"item", itemUri);
+  n3store.addTriple(releaseUri, MO+"item", itemUri);  // how to identify different items?
 
-  n3store.addTriple(releaseUri, OMA+"catalogue_number", literal(recordSide.catNo, "string"));
-
-  // check if record label with rdfs:label already exists
-
-  checkExisting(MO+"Label", recordSide.label, LABEL)
-
-  let labelFlag = 0;
-  let recordLabelUri = OMAD+guid();
-  var t1 = n3store.getObjects(null, MO+"record_label", null);
-  //var t1 = n3store.getSubjects(null, TYPE, MO+"Label");
-  if (t1){
-    t1.forEach(function(t) {
-      t2 = n3store.getObjects(t, LABEL, null)[0];
-      if (t2 == literal(recordSide.label, "string")){
-        recordLabelUri = t;
-        labelFlag = 1;
-        return;
-      }
-    });
-  };
-  if (labelFlag == 0){
-    n3store.addTriple(recordLabelUri, TYPE, MO+"Label");
-    n3store.addTriple(recordLabelUri, LABEL, literal(recordSide.label, "string"));
-  }
-
-  //console.log(recordLabelUri);
+  const recordLabelUri = checkExisting(MO+"Label", LABEL, recordSide.label)[0];
   n3store.addTriple(releaseUri, MO+"record_label", recordLabelUri);
-
 
   const recordPlaybackUri = OMAD+guid();
   n3store.addTriple(recordPlaybackUri, TYPE, OMA+"RecordPlayback");

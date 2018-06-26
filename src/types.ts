@@ -5,11 +5,12 @@ export interface RecordSide {
   catNo: string,
   label: string,
   side: string,
-  soundObjects: Fragment[]
+  soundObjects: Fragment[],
+  imageUri: string
 }
 
 export interface Fragment {
-  time: number,
+  //time: number,
   duration: number,
   normalFeatures: number[],
   fileUri: string,
