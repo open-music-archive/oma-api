@@ -52,7 +52,8 @@ function addTestRecordSide() {
     label: "Parlophone",
     side: "A",
     soundObjects: [],
-    imageUri: "http://www.example.com/example.jpg"
+    imageUri: "http://www.example.com/example.jpg",
+    time: "2018-05-12T13:20:00"
   })
 }
 

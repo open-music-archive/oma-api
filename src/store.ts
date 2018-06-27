@@ -13,6 +13,7 @@ const OMAD = "http://openmusicarchive.org/data/";
 const TL = "http://purl.org/NET/c4dm/timeline.owl#";
 const AFX = "https://w3id.org/aufx/ontology/2.0/";
 const FOAF = 'http://xmlns.com/foaf/0.1/';
+const EVENT = 'http://purl.org/NET/c4dm/event.owl#';
 
 const TYPE = RDF+"type";
 const LABEL = RDFS+"label";
@@ -26,6 +27,7 @@ const n3store2 = N3.Store();
 const prefixes = {  dc: 'http://purl.org/dc/elements/1.1/',
                     owl: 'http://www.w3.org/2002/07/owl#' ,
                     xml: 'http://www.w3.org/XML/1998/namespace' ,
+                    event: EVENT,
                     mo: MO ,
                     tl: TL ,
                     oma: OMA ,
@@ -94,7 +96,9 @@ function checkExisting(cType, predicate, lString){
     n3store.addTriple(guri, TYPE, cType);
     n3store.addTriple(guri, predicate, literal(lString, "string"));
   }
+  //console.log(guri);
   return [guri, flag]
+  
 }
 
 export async function addRecordSide(recordSide: RecordSide) {
@@ -126,11 +130,11 @@ export async function addRecordSide(recordSide: RecordSide) {
   n3store.addTriple(recordSideUri, TYPE, OMA+"RecordSide");
   n3store.addTriple(recordSideUri, LABEL, literal(recordSide.side, "string"));
 
-  const artistUri = checkExisting(MO+"MusicArtist", FOAF+"name", recordSide.artist);
+  const artistUri = checkExisting(MO+"MusicArtist", FOAF+"name", recordSide.artist)[0];
   
   n3store.addTriple(recordSideUri, OMA+"artist", artistUri);
   n3store.addTriple(recordSideUri, OMA+"record_side_title", literal(recordSide.title, "string"));
-  n3store.addTriple(artistUri, FOAF+"name", literal(recordSide.artist, "string"));
+
 
   let itemUri;
   if (releaseUriCheck[1] == 0){
@@ -152,6 +156,10 @@ export async function addRecordSide(recordSide: RecordSide) {
   n3store.addTriple(recordPlaybackUri, TYPE, OMA+"RecordPlayback");
   n3store.addTriple(recordPlaybackUri, OMA+"record_side_played", recordSideUri);
 
+  const timeBnode = bnode();
+  n3store.addTriple(recordPlaybackUri, EVENT+"time", timeBnode);
+  n3store.addTriple(timeBnode, TL+"atDateTime", literal(recordSide.time, "dateTime"));
+
   const signal1Uri = OMAD+guid();
   n3store.addTriple(signal1Uri, TYPE, MO+"Signal");
   n3store.addTriple(recordPlaybackUri, MO+"recorded_as", signal1Uri);
@@ -162,6 +170,7 @@ export async function addRecordSide(recordSide: RecordSide) {
   n3store.addTriple(transformBnode, OMA+"equalization_curve", OMA+"RIAA");
 
   const signal2Bnode = bnode();
+  console.log(signal2Bnode);
   n3store.addTriple(signal2Bnode, TYPE, MO+"Signal");
   n3store.addTriple(transformBnode, AFX+"output_signal", signal2Bnode);
 
@@ -192,7 +201,6 @@ export async function addRecordSide(recordSide: RecordSide) {
     n3store.addTriple(soundObjectSignalUri, OMA+"record_side", recordSideUri);
 
     n3store2.addTriple(interval2Uri, TL+"beginsAtDuration", literal(`PT${item.time}S`, "duration")); // hidden graph
-
   }
 
   addClustering(null)
@@ -202,9 +210,7 @@ export async function addRecordSide(recordSide: RecordSide) {
     var t2 = n3store.getTriples(t1.object, LABEL, null)[0];
     label = t2.object;
   }
-  
   writeStores();
-  
 }
 
 function writeStores(){
@@ -243,24 +249,19 @@ function arraysEqual(_arr1, _arr2) {
 
 function removeClustering(clustering){
   n3store.getObjects(clustering, OMA+"has_cluster").forEach(c => {
-    //console.log(n3store.getTriples(c, null, null));
     n3store.removeTriples(n3store.getTriples(c, null, null));
   })
-  //console.log(n3store.getTriples(clustering, null, null));
-  n3store.removeTriples(n3store.getTriples(clustering, null, null));
-  
+  n3store.removeTriples(n3store.getTriples(clustering, null, null)); 
 }
 
 function checkExistingClustering(clustering){
   let features = [];
   n3store.getSubjects(TYPE, OMA+"Clustering").forEach(c => {
     n3store.getObjects(c, OMA+"used_feature").forEach(f => {
-      let s = f.split("/");
-      features.push(s[s.length-1])
+      features.push(f.split("/")[f.split("/").length-1])
     });
     if (arraysEqual(features,clustering.features)){
       removeClustering(c);
-      //return true;
     }
   })
 }
@@ -273,7 +274,7 @@ function addClustering(clustering){
                                 name: "cluster2" },],
                   method:   "method" }
 
-  
+
   checkExistingClustering(clustering);
 
   const clusteringBnode = bnode();
@@ -300,8 +301,15 @@ export function getRecords(): Promise<string[]> {
   return n3store.getSubjects(TYPE, OMA+"RecordSide");
 }
 
+function _bnode(){
+  let b = n3store.createBlankNode(guid());
+  //g(b);
+  return b;
+  //return n3store.createBlankNode(guid());
+}
+
 function bnode(){
-  return n3store.createBlankNode(guid());
+  return n3store.createBlankNode();
 }
 
 function literal(s, t){

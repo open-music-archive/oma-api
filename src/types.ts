@@ -6,7 +6,8 @@ export interface RecordSide {
   label: string,
   side: string,
   soundObjects: SoundObject[],
-  imageUri: string
+  imageUri: string,
+  time: string
 }
 
 export interface SoundObject {
