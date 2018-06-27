@@ -53,7 +53,9 @@ function addTestRecordSide() {
     side: "A",
     soundObjects: [],
     imageUri: "http://www.example.com/example.jpg",
-    time: "2018-05-12T13:20:00"
+    time: "2018-05-12T13:20:00",
+    eq: "RIAA",
+    noEqAudioFile: "audio_01.wav"
   })
 }
 

@@ -164,7 +164,7 @@ export async function addRecordSide(recordSide: RecordSide) {
   const transformBnode = bnode();
   n3store.addTriple(transformBnode, TYPE, AFX+"Transform");
   n3store.addTriple(transformBnode, AFX+"input_signal", signal1Uri);
-  n3store.addTriple(transformBnode, OMA+"equalization_curve", OMA+"RIAA");
+  n3store.addTriple(transformBnode, OMA+"equalization_curve", OMA+recordSide.eq);
 
   const signal2Bnode = bnode();
   n3store.addTriple(signal2Bnode, TYPE, MO+"Signal");
@@ -178,7 +178,7 @@ export async function addRecordSide(recordSide: RecordSide) {
   n3store.addTriple(interval1Bnode, TYPE, TL+"Interval");
   n3store.addTriple(interval1Bnode, TL+"timeline", timelineBnode);
 
-  n3store2.addTriple("audio_no_eq.wav", MO+"encodes", signal1Uri); // hidden graph
+  n3store2.addTriple("http://openmusicarchive.org/audio/noeq/"+recordSide.noEqAudioFile, MO+"encodes", signal1Uri); // hidden graph
 
   // sound object
   var interval2Uri;
