@@ -34,11 +34,11 @@ app.get('/texture', async (req, res) => {
 });
 
 app.listen(PORT, async () => {
-  await featureDb.connect();
-  console.log('open music archive server started at http://localhost:' + PORT);
+  //await featureDb.connect();
+  //console.log('open music archive server started at http://localhost:' + PORT);
   //await addTestFeature();
   //console.log(JSON.stringify(await featureDb.getAllFeatures(), null, 2));
-  //addTestRecordSide();
+  addTestRecordSide();
   //const testRecord = JSON.parse(fs.readFileSync('./test/chunks.json', 'utf8'));
   //textures.generateLoop(testRecord);
 });

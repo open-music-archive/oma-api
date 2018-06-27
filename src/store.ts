@@ -36,8 +36,7 @@ const prefixes = {  dc: 'http://purl.org/dc/elements/1.1/',
                     omad: OMAD,
                     afx: AFX
                   }
-//writeToRdf(DUMP_PATH, n3store);
-//writeToRdf(DUMP_PATH_2, n3store2);
+
 const ready = Promise.all([readFromRDF(DUMP_PATH, n3store), readFromRDF(DUMP_PATH_2, n3store2)]);
 
 
@@ -95,14 +94,9 @@ function checkExisting(cType, predicate, lString){
     n3store.addTriple(guri, TYPE, cType);
     n3store.addTriple(guri, predicate, literal(lString, "string"));
   }
-  //console.log(cType, guri);
-  //return [guri, flag]
   return [guri, flag]
 }
 
-
-
-// guids for blank nodes, shuffle before serialising
 export async function addRecordSide(recordSide: RecordSide) {
   /*
   RecordSide {
@@ -116,6 +110,10 @@ export async function addRecordSide(recordSide: RecordSide) {
   */
 
   await ready;
+  writeToRdf(DUMP_PATH, N3.Store());
+  writeToRdf(DUMP_PATH_2, N3.Store());
+  //return;
+  
   console.log(n3store.size);
   console.log(n3store2.size);
 
@@ -129,14 +127,10 @@ export async function addRecordSide(recordSide: RecordSide) {
   n3store.addTriple(recordSideUri, LABEL, literal(recordSide.side, "string"));
 
   const artistUri = checkExisting(MO+"MusicArtist", FOAF+"name", recordSide.artist);
-  //console.log(testUri);
-
-  //const artistUri = OMAD+guid();
-  //n3store.addTriple(artistUri, TYPE, MO+"MusicArtist");
+  
   n3store.addTriple(recordSideUri, OMA+"artist", artistUri);
   n3store.addTriple(recordSideUri, OMA+"record_side_title", literal(recordSide.title, "string"));
   n3store.addTriple(artistUri, FOAF+"name", literal(recordSide.artist, "string"));
-
 
   let itemUri;
   if (releaseUriCheck[1] == 0){
@@ -149,7 +143,7 @@ export async function addRecordSide(recordSide: RecordSide) {
   n3store.addTriple(itemUri, TYPE, OMA+"RecordItem");
   n3store.addTriple(recordSideUri, OMA+"side_of_record_item", itemUri);
 
-  n3store.addTriple(releaseUri, MO+"item", itemUri);  // todo: get item for release
+  n3store.addTriple(releaseUri, MO+"item", itemUri);  
 
   const recordLabelUri = checkExisting(MO+"Label", LABEL, recordSide.label)[0];
   n3store.addTriple(releaseUri, MO+"record_label", recordLabelUri);
@@ -202,7 +196,6 @@ export async function addRecordSide(recordSide: RecordSide) {
   }
 
   addClustering(null)
-
   var label;
   var t1 = n3store.getTriples(null, MO+"record_label", null)[0];
   if (t1){
@@ -236,17 +229,56 @@ export function exampleSoundObjects() {
   return [f1, f2, f3]
 }
 
+function arraysEqual(_arr1, _arr2) {
+  if (!Array.isArray(_arr1) || ! Array.isArray(_arr2) || _arr1.length !== _arr2.length)
+    return false;
+  var arr1 = _arr1.concat().sort();
+  var arr2 = _arr2.concat().sort();
+  for (var i = 0; i < arr1.length; i++) {
+      if (arr1[i] !== arr2[i])
+          return false;
+  }
+  return true;
+}
+
+function removeClustering(clustering){
+  n3store.getObjects(clustering, OMA+"has_cluster").forEach(c => {
+    //console.log(n3store.getTriples(c, null, null));
+    n3store.removeTriples(c, null, null);
+  })
+  //console.log(n3store.getTriples(clustering, null, null));
+  n3store.removeTriples(clustering, null, null);
+  
+}
+
+function checkExistingClustering(clustering){
+  let features = [];
+  n3store.getSubjects(TYPE, OMA+"Clustering").forEach(c => {
+    n3store.getObjects(c, OMA+"used_feature").forEach(f => {
+      let s = f.split("/");
+      features.push(s[s.length-1])
+    });
+    if (arraysEqual(features,clustering.features)){
+      removeClustering(c);
+      return true;
+    }
+  })
+}
 
 function addClustering(clustering){
   clustering = {  features: ["MFCC", "Chroma"],
                   clusters: [{  signals: ["A0", "A1", "A2"],
                                 name: "cluster1" },
                              {  signals: ["B0", "B1", "B2"],
-                                name: "cluster2" }]
-  }
+                                name: "cluster2" },],
+                  method:   "method" }
+
+  
+  checkExistingClustering(clustering);
 
   const clusteringBnode = bnode();
   n3store.addTriple(clusteringBnode, TYPE, OMA+"Clustering");
+  n3store.addTriple(clusteringBnode, OMA+"method", literal(clustering.method, "string"));
 
   for (let item of clustering.features) {
     n3store.addTriple(clusteringBnode, OMA+"used_feature", OMA+item);
