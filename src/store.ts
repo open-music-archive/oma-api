@@ -244,10 +244,10 @@ function arraysEqual(_arr1, _arr2) {
 function removeClustering(clustering){
   n3store.getObjects(clustering, OMA+"has_cluster").forEach(c => {
     //console.log(n3store.getTriples(c, null, null));
-    n3store.removeTriples(c, null, null);
+    n3store.removeTriples(n3store.getTriples(c, null, null));
   })
   //console.log(n3store.getTriples(clustering, null, null));
-  n3store.removeTriples(clustering, null, null);
+  n3store.removeTriples(n3store.getTriples(clustering, null, null));
   
 }
 
@@ -260,7 +260,7 @@ function checkExistingClustering(clustering){
     });
     if (arraysEqual(features,clustering.features)){
       removeClustering(c);
-      return true;
+      //return true;
     }
   })
 }
