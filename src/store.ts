@@ -48,9 +48,6 @@ function getString(s){
 
 function checkExistingSide(recordSide: RecordSide){
   //assumes only one item per release can exist
-  //artist
-  //title
-  //catalogue number
   let flag = 0;
   const releases = n3store.getSubjects(TYPE, MO+"Release");
   releases.forEach(r => {
@@ -63,7 +60,6 @@ function checkExistingSide(recordSide: RecordSide){
       const artistName = n3store.getObjects(artist, FOAF+"name")[0];
 
       if (getString(artistName) == recordSide.artist && getString(title) == recordSide.title) {
-        console.log("side/release already exists.");
         skipRecording();
         return;
       }
@@ -72,7 +68,7 @@ function checkExistingSide(recordSide: RecordSide){
   }
          
 function skipRecording(){
-  // skip recording
+  console.log("side/release already exists.");
 }
   
 function checkExisting(cType, predicate, lString){
@@ -115,8 +111,12 @@ export async function addRecordSide(recordSide: RecordSide) {
 
   await ready;
   
+  console.log(n3store.getTriples())
+
   console.log(n3store.size);
   console.log(n3store2.size);
+  //writeStores();
+  //return;
 
   checkExistingSide(recordSide);
 
@@ -298,8 +298,12 @@ export function getRecords(): Promise<string[]> {
 }
 
 function bnode(){
-  return n3store.createBlankNode(guid());
+  //return n3store.createBlankNode(guid());
+  // return guid URI, bnode rewrite bug
+  return OMAD+guid();
 }
+
+
 
 function literal(s, t){
   return N3.Util.createLiteral(s, XSD+t)
