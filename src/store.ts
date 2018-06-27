@@ -114,9 +114,6 @@ export async function addRecordSide(recordSide: RecordSide) {
   */
 
   await ready;
-  writeToRdf(DUMP_PATH, N3.Store());
-  writeToRdf(DUMP_PATH_2, N3.Store());
-  //return;
   
   console.log(n3store.size);
   console.log(n3store2.size);
@@ -170,7 +167,6 @@ export async function addRecordSide(recordSide: RecordSide) {
   n3store.addTriple(transformBnode, OMA+"equalization_curve", OMA+"RIAA");
 
   const signal2Bnode = bnode();
-  console.log(signal2Bnode);
   n3store.addTriple(signal2Bnode, TYPE, MO+"Signal");
   n3store.addTriple(transformBnode, AFX+"output_signal", signal2Bnode);
 
@@ -301,15 +297,8 @@ export function getRecords(): Promise<string[]> {
   return n3store.getSubjects(TYPE, OMA+"RecordSide");
 }
 
-function _bnode(){
-  let b = n3store.createBlankNode(guid());
-  //g(b);
-  return b;
-  //return n3store.createBlankNode(guid());
-}
-
 function bnode(){
-  return n3store.createBlankNode();
+  return n3store.createBlankNode(guid());
 }
 
 function literal(s, t){
