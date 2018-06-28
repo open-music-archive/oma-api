@@ -111,8 +111,7 @@ export async function addRecordSide(recordSide: RecordSide) {
 
   await ready;
   
-  console.log(n3store.getTriples())
-
+  //console.log(n3store.getTriples())
   console.log(n3store.size);
   console.log(n3store2.size);
   //writeStores();
@@ -252,13 +251,16 @@ function removeClustering(clustering){
 
 function checkExistingClustering(clustering){
   let features = [];
+  //let method = "";
   n3store.getSubjects(TYPE, OMA+"Clustering").forEach(c => {
     n3store.getObjects(c, OMA+"used_feature").forEach(f => {
       features.push(f.split("/")[f.split("/").length-1])
     });
-    if (arraysEqual(features,clustering.features)){
-      removeClustering(c);
-    }
+    n3store.getObjects(c, OMA+"mthod").forEach(m => {
+      if (arraysEqual(features,clustering.features) && getString(m) == clustering.method ){
+        removeClustering(c);
+        return;
+    }})
   })
 }
 
@@ -299,11 +301,8 @@ export function getRecords(): Promise<string[]> {
 
 function bnode(){
   //return n3store.createBlankNode(guid());
-  // return guid URI, bnode rewrite bug
-  return OMAD+guid();
+  return OMAD+guid(); // return guid URI, bnode rewrite bug
 }
-
-
 
 function literal(s, t){
   return N3.Util.createLiteral(s, XSD+t)
