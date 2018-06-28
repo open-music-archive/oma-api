@@ -251,13 +251,12 @@ function removeClustering(clustering){
 
 function checkExistingClustering(clustering){
   let features = [];
-  //let method = "";
   n3store.getSubjects(TYPE, OMA+"Clustering").forEach(c => {
     n3store.getObjects(c, OMA+"used_feature").forEach(f => {
       features.push(f.split("/")[f.split("/").length-1])
     });
-    n3store.getObjects(c, OMA+"mthod").forEach(m => {
-      if (arraysEqual(features,clustering.features) && getString(m) == clustering.method ){
+    n3store.getObjects(c, OMA+"method").forEach(m => {
+      if (arraysEqual(features,clustering.features) && m.split("/")[m.split("/").length-1] == clustering.method ){
         removeClustering(c);
         return;
     }})
@@ -270,14 +269,15 @@ function addClustering(clustering){
                                 name: "cluster1" },
                              {  signals: ["B0", "B1", "B2"],
                                 name: "cluster2" },],
-                  method:   "method" }
+                  method:   "Method" }
 
 
   checkExistingClustering(clustering);
 
   const clusteringBnode = bnode();
   n3store.addTriple(clusteringBnode, TYPE, OMA+"Clustering");
-  n3store.addTriple(clusteringBnode, OMA+"method", literal(clustering.method, "string"));
+  //n3store.addTriple(clusteringBnode, OMA+"method", literal(clustering.method, "string"));
+  n3store.addTriple(clusteringBnode, OMA+"method", OMA+clustering.method);
 
   for (let item of clustering.features) {
     n3store.addTriple(clusteringBnode, OMA+"used_feature", OMA+item);
