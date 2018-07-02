@@ -13,6 +13,7 @@ const OMAD = "http://openmusicarchive.org/data/";
 const TL = "http://purl.org/NET/c4dm/timeline.owl#";
 const AFX = "https://w3id.org/aufx/ontology/2.0/";
 const FOAF = 'http://xmlns.com/foaf/0.1/';
+const EVENT = 'http://purl.org/NET/c4dm/event.owl#';
 
 const TYPE = RDF+"type";
 const LABEL = RDFS+"label";
@@ -26,6 +27,7 @@ const n3store2 = N3.Store();
 const prefixes = {  dc: 'http://purl.org/dc/elements/1.1/',
                     owl: 'http://www.w3.org/2002/07/owl#' ,
                     xml: 'http://www.w3.org/XML/1998/namespace' ,
+                    event: EVENT,
                     mo: MO ,
                     tl: TL ,
                     oma: OMA ,
@@ -36,8 +38,7 @@ const prefixes = {  dc: 'http://purl.org/dc/elements/1.1/',
                     omad: OMAD,
                     afx: AFX
                   }
-//writeToRdf(DUMP_PATH, n3store);
-//writeToRdf(DUMP_PATH_2, n3store2);
+
 const ready = Promise.all([readFromRDF(DUMP_PATH, n3store), readFromRDF(DUMP_PATH_2, n3store2)]);
 
 
@@ -47,9 +48,6 @@ function getString(s){
 
 function checkExistingSide(recordSide: RecordSide){
   //assumes only one item per release can exist
-  //artist
-  //title
-  //catalogue number
   let flag = 0;
   const releases = n3store.getSubjects(TYPE, MO+"Release");
   releases.forEach(r => {
@@ -62,7 +60,6 @@ function checkExistingSide(recordSide: RecordSide){
       const artistName = n3store.getObjects(artist, FOAF+"name")[0];
 
       if (getString(artistName) == recordSide.artist && getString(title) == recordSide.title) {
-        console.log("side/release already exists.");
         skipRecording();
         return;
       }
@@ -71,7 +68,7 @@ function checkExistingSide(recordSide: RecordSide){
   }
          
 function skipRecording(){
-  // skip recording
+  console.log("side/release already exists.");
 }
   
 function checkExisting(cType, predicate, lString){
@@ -95,14 +92,11 @@ function checkExisting(cType, predicate, lString){
     n3store.addTriple(guri, TYPE, cType);
     n3store.addTriple(guri, predicate, literal(lString, "string"));
   }
-  //console.log(cType, guri);
-  //return [guri, flag]
+  //console.log(guri);
   return [guri, flag]
+  
 }
 
-
-
-// guids for blank nodes, shuffle before serialising
 export async function addRecordSide(recordSide: RecordSide) {
   /*
   RecordSide {
@@ -116,8 +110,12 @@ export async function addRecordSide(recordSide: RecordSide) {
   */
 
   await ready;
+  
+  //console.log(n3store.getTriples())
   console.log(n3store.size);
   console.log(n3store2.size);
+  //writeStores();
+  //return;
 
   checkExistingSide(recordSide);
 
@@ -128,14 +126,10 @@ export async function addRecordSide(recordSide: RecordSide) {
   n3store.addTriple(recordSideUri, TYPE, OMA+"RecordSide");
   n3store.addTriple(recordSideUri, LABEL, literal(recordSide.side, "string"));
 
-  const artistUri = checkExisting(MO+"MusicArtist", FOAF+"name", recordSide.artist);
-  //console.log(testUri);
-
-  //const artistUri = OMAD+guid();
-  //n3store.addTriple(artistUri, TYPE, MO+"MusicArtist");
+  const artistUri = checkExisting(MO+"MusicArtist", FOAF+"name", recordSide.artist)[0];
+  
   n3store.addTriple(recordSideUri, OMA+"artist", artistUri);
   n3store.addTriple(recordSideUri, OMA+"record_side_title", literal(recordSide.title, "string"));
-  n3store.addTriple(artistUri, FOAF+"name", literal(recordSide.artist, "string"));
 
 
   let itemUri;
@@ -149,7 +143,7 @@ export async function addRecordSide(recordSide: RecordSide) {
   n3store.addTriple(itemUri, TYPE, OMA+"RecordItem");
   n3store.addTriple(recordSideUri, OMA+"side_of_record_item", itemUri);
 
-  n3store.addTriple(releaseUri, MO+"item", itemUri);  // todo: get item for release
+  n3store.addTriple(releaseUri, MO+"item", itemUri);  
 
   const recordLabelUri = checkExisting(MO+"Label", LABEL, recordSide.label)[0];
   n3store.addTriple(releaseUri, MO+"record_label", recordLabelUri);
@@ -158,6 +152,10 @@ export async function addRecordSide(recordSide: RecordSide) {
   n3store.addTriple(recordPlaybackUri, TYPE, OMA+"RecordPlayback");
   n3store.addTriple(recordPlaybackUri, OMA+"record_side_played", recordSideUri);
 
+  const timeBnode = bnode();
+  n3store.addTriple(recordPlaybackUri, EVENT+"time", timeBnode);
+  n3store.addTriple(timeBnode, TL+"atDateTime", literal(recordSide.time, "dateTime"));
+
   const signal1Uri = OMAD+guid();
   n3store.addTriple(signal1Uri, TYPE, MO+"Signal");
   n3store.addTriple(recordPlaybackUri, MO+"recorded_as", signal1Uri);
@@ -165,7 +163,7 @@ export async function addRecordSide(recordSide: RecordSide) {
   const transformBnode = bnode();
   n3store.addTriple(transformBnode, TYPE, AFX+"Transform");
   n3store.addTriple(transformBnode, AFX+"input_signal", signal1Uri);
-  n3store.addTriple(transformBnode, OMA+"equalization_curve", OMA+"RIAA");
+  n3store.addTriple(transformBnode, OMA+"equalization_curve", OMA+recordSide.eq);
 
   const signal2Bnode = bnode();
   n3store.addTriple(signal2Bnode, TYPE, MO+"Signal");
@@ -179,7 +177,7 @@ export async function addRecordSide(recordSide: RecordSide) {
   n3store.addTriple(interval1Bnode, TYPE, TL+"Interval");
   n3store.addTriple(interval1Bnode, TL+"timeline", timelineBnode);
 
-  n3store2.addTriple("audio_no_eq.wav", MO+"encodes", signal1Uri); // hidden graph
+  n3store2.addTriple("http://openmusicarchive.org/audio/noeq/"+recordSide.noEqAudioFile, MO+"encodes", signal1Uri); // hidden graph
 
   // sound object
   var interval2Uri;
@@ -198,20 +196,16 @@ export async function addRecordSide(recordSide: RecordSide) {
     n3store.addTriple(soundObjectSignalUri, OMA+"record_side", recordSideUri);
 
     n3store2.addTriple(interval2Uri, TL+"beginsAtDuration", literal(`PT${item.time}S`, "duration")); // hidden graph
-
   }
 
   addClustering(null)
-
   var label;
   var t1 = n3store.getTriples(null, MO+"record_label", null)[0];
   if (t1){
     var t2 = n3store.getTriples(t1.object, LABEL, null)[0];
     label = t2.object;
   }
-  
   writeStores();
-  
 }
 
 function writeStores(){
@@ -236,17 +230,54 @@ export function exampleSoundObjects() {
   return [f1, f2, f3]
 }
 
+function arraysEqual(_arr1, _arr2) {
+  if (!Array.isArray(_arr1) || ! Array.isArray(_arr2) || _arr1.length !== _arr2.length)
+    return false;
+  var arr1 = _arr1.concat().sort();
+  var arr2 = _arr2.concat().sort();
+  for (var i = 0; i < arr1.length; i++) {
+      if (arr1[i] !== arr2[i])
+          return false;
+  }
+  return true;
+}
+
+function removeClustering(clustering){
+  n3store.getObjects(clustering, OMA+"has_cluster").forEach(c => {
+    n3store.removeTriples(n3store.getTriples(c, null, null));
+  })
+  n3store.removeTriples(n3store.getTriples(clustering, null, null)); 
+}
+
+function checkExistingClustering(clustering){
+  let features = [];
+  n3store.getSubjects(TYPE, OMA+"Clustering").forEach(c => {
+    n3store.getObjects(c, OMA+"used_feature").forEach(f => {
+      features.push(f.split("/")[f.split("/").length-1])
+    });
+    n3store.getObjects(c, OMA+"method").forEach(m => {
+      if (arraysEqual(features,clustering.features) && m.split("/")[m.split("/").length-1] == clustering.method ){
+        removeClustering(c);
+        return;
+    }})
+  })
+}
 
 function addClustering(clustering){
   clustering = {  features: ["MFCC", "Chroma"],
                   clusters: [{  signals: ["A0", "A1", "A2"],
                                 name: "cluster1" },
                              {  signals: ["B0", "B1", "B2"],
-                                name: "cluster2" }]
-  }
+                                name: "cluster2" },],
+                  method:   "Method" }
+
+
+  checkExistingClustering(clustering);
 
   const clusteringBnode = bnode();
   n3store.addTriple(clusteringBnode, TYPE, OMA+"Clustering");
+  //n3store.addTriple(clusteringBnode, OMA+"method", literal(clustering.method, "string"));
+  n3store.addTriple(clusteringBnode, OMA+"method", OMA+clustering.method);
 
   for (let item of clustering.features) {
     n3store.addTriple(clusteringBnode, OMA+"used_feature", OMA+item);
@@ -269,7 +300,8 @@ export function getRecords(): Promise<string[]> {
 }
 
 function bnode(){
-  return n3store.createBlankNode(guid());
+  //return n3store.createBlankNode(guid());
+  return OMAD+guid(); // return guid URI, bnode rewrite bug
 }
 
 function literal(s, t){
