@@ -18,3 +18,11 @@ export async function insertFeatures(features: DbSoundObjectFeatures): Promise<O
 export async function getAllFeatures(): Promise<DbSoundObjectFeatures[]> {
   return db.collection(FEATURES).find({}).toArray();
 }
+
+export async function getLongestSoundObjects(count: number): Promise<DbSoundObjectFeatures[]> {
+  return db.collection(FEATURES)
+    .aggregate([{ $sort: { duration: -1 } }])
+    .project({"audioUri": 1, "duration": 1})
+    .limit(count)
+    .toArray();
+}
