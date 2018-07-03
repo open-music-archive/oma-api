@@ -30,7 +30,7 @@ app.get('/records', (req, res) => {
 });
 
 app.get('/texture', async (req, res) => {
-  res.send(await textures.generateLoop());
+  res.send(await textures.generateTexture());
 });
 
 app.listen(PORT, async () => {

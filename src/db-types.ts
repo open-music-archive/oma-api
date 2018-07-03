@@ -1,10 +1,13 @@
 import { ObjectID } from 'mongodb';
 import { FeatureSummary } from './types';
 
-export interface DbSoundObjectFeatures {
+export interface DbSoundObject {
   _id: ObjectID,
   duration: number,
+  audioUri: string
+}
+
+export interface DbSoundObjectFeatures extends DbSoundObject {
   normalFeatures: number[],
-  audioUri: string,
   features: FeatureSummary[]
 }

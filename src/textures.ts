@@ -1,6 +1,7 @@
 import * as _ from 'lodash';
 import { DymoManager, DymoGenerator, forAll, uris } from 'dymo-core';
 import { RecordSide } from './types';
+import { DbSoundObject } from './db-types';
 import * as featureDb from './feature-db';
 
 const ONTOLOGIES_PATH = 'https://raw.githubusercontent.com/semantic-player/dymo-core/master/ontologies/';
@@ -8,9 +9,14 @@ const ONTOLOGIES_PATH = 'https://raw.githubusercontent.com/semantic-player/dymo-
 
 let dymoGen = new DymoGenerator(new DymoManager().getStore());
 
-export async function generateLoop(): Promise<string> {
-  //pick 5 of the 20 longest objects
-  const objects = _.sampleSize(await featureDb.getLongestSoundObjects(20), 5);
+export async function generateTexture(): Promise<string> {
+  const objects = Math.random() > 0.5 ?
+    _.sampleSize(await featureDb.getLongestSoundObjects(20), 5) :
+    _.sampleSize(await featureDb.getShortestSoundObjects(40), 10);
+  return generateRandomLoop(objects);
+}
+
+async function generateRandomLoop(objects: DbSoundObject[]): Promise<string> {
   const audioUris = objects.map(o => o.audioUri);
   const loop = await dymoGen.addDymo();
   await dymoGen.setDymoParameter(loop, uris.LOOP, 1);

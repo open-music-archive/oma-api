@@ -1,6 +1,6 @@
 import { MongoClient, Db, ObjectID } from 'mongodb';
 import { URL } from './config';
-import { DbSoundObjectFeatures } from './db-types';
+import { DbSoundObject, DbSoundObjectFeatures } from './db-types';
 
 const FEATURES = "soundObjectFeatures";
 
@@ -21,9 +21,17 @@ export async function getAllFeatures(): Promise<DbSoundObjectFeatures[]> {
   return db.collection(FEATURES).find({}).toArray();
 }
 
-export async function getLongestSoundObjects(count: number): Promise<DbSoundObjectFeatures[]> {
+export async function getLongestSoundObjects(count: number): Promise<DbSoundObject[]> {
+  return getSoundObjects([{ $sort: { duration: -1 } }], count);
+}
+
+export async function getShortestSoundObjects(count: number): Promise<DbSoundObject[]> {
+  return getSoundObjects([{ $sort: { duration: 1 } }], count);
+}
+
+async function getSoundObjects(aggregate: Object[], count: number): Promise<DbSoundObject[]> {
   return db.collection(FEATURES)
-    .aggregate([{ $sort: { duration: -1 } }])
+    .aggregate(aggregate)
     .project({"audioUri": 1, "duration": 1})
     .limit(count)
     .toArray();
