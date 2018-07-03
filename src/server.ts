@@ -42,8 +42,8 @@ app.listen(PORT, async () => {
 async function test() {
   //addTestRecordSide();
   //await addTestFeature();
-  console.log(JSON.stringify(await featureDb.getLongestSoundObjects(3), null, 2));
-  //textures.generateLoop(testRecord);
+  //console.log(JSON.stringify(await featureDb.getLongestSoundObjects(3), null, 2));
+  //textures.generateLoop();
 }
 
 function addTestRecordSide() {

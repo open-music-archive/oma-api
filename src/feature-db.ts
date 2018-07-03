@@ -6,6 +6,8 @@ const FEATURES = "soundObjectFeatures";
 
 let db: Db;
 
+console.log("INIT DB")
+
 export function connect() {
   return MongoClient.connect(URL)
     .then(client => db = client.db('openmusicarchive'));
