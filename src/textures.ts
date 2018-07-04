@@ -10,26 +10,32 @@ const ONTOLOGIES_PATH = 'https://raw.githubusercontent.com/semantic-player/dymo-
 let dymoGen = new DymoGenerator(new DymoManager().getStore());
 
 export async function generateTexture(): Promise<string> {
-  const objects = Math.random() > 0.5 ?
-    _.sampleSize(await featureDb.getLongestSoundObjects(20), 5) :
-    _.sampleSize(await featureDb.getShortestSoundObjects(40), 10);
-  return generateRandomLoop(objects);
+  const longs = _.sampleSize(await featureDb.getLongestSoundObjects(50), _.random(20));
+  const shorts = _.sampleSize(await featureDb.getShortestSoundObjects(50), _.random(20));
+  return generateRandomLoop(longs.concat(shorts));
 }
 
 async function generateRandomLoop(objects: DbSoundObject[]): Promise<string> {
   const audioUris = objects.map(o => o.audioUri);
-  const loop = await dymoGen.addDymo();
+  const loop = await dymoGen.addDymo(null, null, uris.SEQUENCE);
   await dymoGen.setDymoParameter(loop, uris.LOOP, 1);
-  audioUris.forEach(a => addRandomOnsetDymo(loop, a, 4));
+  const loopDuration = 4*Math.random();
+  await Promise.all(audioUris.map(a => addRandomOnsetDymo(loop, a, loopDuration)));
   return getJsonldAndReset();
 }
 
 async function addRandomOnsetDymo(parentUri: string, audioUri: string, maxOnset: number) {
   const dymo = await dymoGen.addDymo(parentUri, audioUri);
+  const onset = maxOnset*Math.random();
   await dymoGen.setDymoParameter(dymo, uris.ONSET, maxOnset*Math.random());
-  await dymoGen.setDymoParameter(dymo, uris.REVERB, Math.random());
-  await dymoGen.setDymoParameter(dymo, uris.DELAY, Math.random());
-  await dymoGen.setDymoParameter(dymo, uris.PAN, Math.random());
+  const reverb = _.random(2) ? 0 : 0.3*Math.random();
+  await dymoGen.setDymoParameter(dymo, uris.REVERB, reverb);
+  const delay = _.random(2) ? 0 : Math.random();
+  await dymoGen.setDymoParameter(dymo, uris.DELAY, delay);
+  //await dymoGen.setDymoParameter(dymo, uris.PAN, Math.random()*4);
+  return dymo;
+  //const params = await dymoGen.getStore().findAllObjects(dymo, uris.HAS_PARAMETER);
+  //params.forEach(async p => console.log(await dymoGen.getStore().findObjectValue(p, uris.VALUE)))
 }
 
 function getJsonldAndReset(): Promise<string> {
