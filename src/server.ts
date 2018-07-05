@@ -33,10 +33,15 @@ app.get('/texture', async (req, res) => {
   res.send(await textures.generateTexture());
 });
 
+app.get('/awesome', async (req, res) => {
+  res.send(await featureDb.getAwesomeLoop());
+});
+
 app.listen(PORT, async () => {
   await featureDb.connect();
   console.log('open music archive server started at http://localhost:' + PORT);
-  test();
+  //console.log(await featureDb.getAwesomeLoop())
+  //test();
 });
 
 async function test() {
