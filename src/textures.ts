@@ -10,8 +10,8 @@ const ONTOLOGIES_PATH = 'https://raw.githubusercontent.com/semantic-player/dymo-
 let dymoGen = new DymoGenerator(new DymoManager().getStore());
 
 export async function generateTexture(): Promise<string> {
-  const longs = _.sampleSize(await featureDb.getLongestSoundObjects(50), _.random(20));
-  const shorts = _.sampleSize(await featureDb.getShortestSoundObjects(50), _.random(20));
+  const longs = _.sampleSize(await featureDb.getLongestSoundObjects(50), _.random(25));
+  const shorts = _.sampleSize(await featureDb.getShortestSoundObjects(50), _.random(25));
   return generateRandomLoop(longs.concat(shorts));
 }
 
@@ -19,7 +19,7 @@ async function generateRandomLoop(objects: DbSoundObject[]): Promise<string> {
   const audioUris = objects.map(o => o.audioUri);
   const loop = await dymoGen.addDymo(null, null, uris.SEQUENCE);
   await dymoGen.setDymoParameter(loop, uris.LOOP, 1);
-  const loopDuration = 4*Math.random();
+  const loopDuration = (4*Math.random()+2);
   await Promise.all(audioUris.map(a => addRandomOnsetDymo(loop, a, loopDuration)));
   return getJsonldAndReset();
 }
@@ -28,6 +28,7 @@ async function addRandomOnsetDymo(parentUri: string, audioUri: string, maxOnset:
   const dymo = await dymoGen.addDymo(parentUri, audioUri);
   const onset = maxOnset*Math.random();
   await dymoGen.setDymoParameter(dymo, uris.ONSET, maxOnset*Math.random());
+  await dymoGen.setDymoParameter(dymo, uris.AMPLITUDE, Math.random());
   const reverb = _.random(2) ? 0 : 0.3*Math.random();
   await dymoGen.setDymoParameter(dymo, uris.REVERB, reverb);
   const delay = _.random(2) ? 0 : Math.random();
