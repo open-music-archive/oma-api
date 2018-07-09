@@ -6,7 +6,7 @@ import * as featureDb from './feature-db';
 import { toDbFeatures } from './util';
 import * as textures from './textures';
 import { RecordSide } from './types';
-import { EXAMPLERECORDSIDE } from './test';
+import { EXAMPLERECORDSIDE, LONGEXAMPLERECORDSIDE } from './test';
 
 const PORT = process.env.PORT || 8060;
 
@@ -39,21 +39,22 @@ app.get('/awesome', async (req, res) => {
 });
 
 app.listen(PORT, async () => {
-  await featureDb.connect();
+  //await featureDb.connect();
   console.log('open music archive server started at http://localhost:' + PORT);
   //console.log(await featureDb.getAwesomeLoop())
-  //test();
+  test();
 });
 
 async function test() {
-  //addTestRecordSide();
+  addTestRecordSide();
   //await addTestFeature();
   //console.log(JSON.stringify(await featureDb.getLongestSoundObjects(3), null, 2));
   //textures.generateLoop();
 }
 
 function addTestRecordSide() {
-  store.addRecordSide(EXAMPLERECORDSIDE)
+  store.addRecordSide(LONGEXAMPLERECORDSIDE)
+  //store.addRecordSide(EXAMPLERECORDSIDE)
 }
 
 async function addTestFeature() {

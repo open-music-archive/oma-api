@@ -199,6 +199,7 @@ export async function addRecordSide(recordSide: RecordSide) {
     n3store2.addTriple(interval2Uri, TL+"beginsAtDuration", literal(`PT${item.time}S`, "duration")); // hidden graph
   }
 
+  /*
   addClustering(null)
   var label;
   var t1 = n3store.getTriples(null, MO+"record_label", null)[0];
@@ -206,6 +207,7 @@ export async function addRecordSide(recordSide: RecordSide) {
     var t2 = n3store.getTriples(t1.object, LABEL, null)[0];
     label = t2.object;
   }
+  */
   writeStores();
 }
 
@@ -214,22 +216,7 @@ function writeStores(){
   writeToRdf(DUMP_PATH_2, n3store2);
 }
 
-export function exampleSoundObjects() {
-  let f1 = {  time: 12.3,
-              duration: 0.1,
-              audioUri: "so1.wav",
-              featureGuid: "feature_doc_guid_001"
-            };
-  let f2 = {  time: 22.5,
-              duration: 0.12,
-              audioUri: "so2.wav",
-              featureGuid: "feature_doc_guid_002" };
-  let f3 = {  time: 32.3,
-              duration: 0.25,
-              audioUri: "so3.wav",
-              featureGuid: "feature_doc_guid_003" };
-  return [f1, f2, f3]
-}
+
 
 function arraysEqual(_arr1, _arr2) {
   if (!Array.isArray(_arr1) || ! Array.isArray(_arr2) || _arr1.length !== _arr2.length)
