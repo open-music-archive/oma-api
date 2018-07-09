@@ -36,5 +36,5 @@ export interface Clustering {
 export interface Cluster {
   name: string,
   signals: string[],
-  centroid: number[]
+  centroid: string
 }

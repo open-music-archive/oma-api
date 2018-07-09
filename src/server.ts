@@ -6,6 +6,7 @@ import * as featureDb from './feature-db';
 import { toDbFeatures } from './util';
 import * as textures from './textures';
 import { RecordSide } from './types';
+import { EXAMPLERECORDSIDE } from './test';
 
 const PORT = process.env.PORT || 8060;
 
@@ -52,19 +53,7 @@ async function test() {
 }
 
 function addTestRecordSide() {
-  store.addRecordSide({
-    title: "The Carnival of Venice",
-    composer: "Benedict - arr. James",
-    artist: "Harry James and his Orchestra",
-    catNo: "R 2848",
-    label: "Parlophone",
-    side: "A",
-    soundObjects: [],
-    imageUri: "http://www.example.com/example.jpg",
-    time: "2018-05-12T13:20:00",
-    eq: "RIAA",
-    noEqAudioFile: "audio_01.wav"
-  })
+  store.addRecordSide(EXAMPLERECORDSIDE)
 }
 
 async function addTestFeature() {

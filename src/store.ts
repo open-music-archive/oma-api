@@ -183,7 +183,8 @@ export async function addRecordSide(recordSide: RecordSide) {
   var interval2Uri;
   var soundObjectSignalUri;
 
-  for (let item of exampleSoundObjects()) {
+  //for (let item of exampleSoundObjects()) {
+  for (let item of recordSide.soundObjects) {
     interval2Uri = OMAD+guid();
     n3store.addTriple(interval2Uri, TYPE, TL+"Interval");
     n3store.addTriple(interval2Uri, TL+"timeline", timelineBnode);
@@ -192,7 +193,7 @@ export async function addRecordSide(recordSide: RecordSide) {
     n3store.addTriple(soundObjectSignalUri, TYPE, OMA+"SoundObjectSignal");
     n3store.addTriple(soundObjectSignalUri, MO+"time", interval2Uri);
     n3store.addTriple(soundObjectSignalUri, OMA+"feature_document_guid", literal(item.featureGuid, "string"));
-    n3store.addTriple(item.fileUri, MO+"encodes", soundObjectSignalUri);
+    n3store.addTriple(item.audioUri, MO+"encodes", soundObjectSignalUri);
     n3store.addTriple(soundObjectSignalUri, OMA+"record_side", recordSideUri);
 
     n3store2.addTriple(interval2Uri, TL+"beginsAtDuration", literal(`PT${item.time}S`, "duration")); // hidden graph
@@ -216,16 +217,16 @@ function writeStores(){
 export function exampleSoundObjects() {
   let f1 = {  time: 12.3,
               duration: 0.1,
-              fileUri: "so1.wav",
+              audioUri: "so1.wav",
               featureGuid: "feature_doc_guid_001"
             };
   let f2 = {  time: 22.5,
               duration: 0.12,
-              fileUri: "so2.wav",
+              audioUri: "so2.wav",
               featureGuid: "feature_doc_guid_002" };
   let f3 = {  time: 32.3,
               duration: 0.25,
-              fileUri: "so3.wav",
+              audioUri: "so3.wav",
               featureGuid: "feature_doc_guid_003" };
   return [f1, f2, f3]
 }
@@ -263,20 +264,12 @@ function checkExistingClustering(clustering){
   })
 }
 
-function addClustering(clustering){
-  clustering = {  features: ["MFCC", "Chroma"],
-                  clusters: [{  signals: ["A0", "A1", "A2"],
-                                name: "cluster1" },
-                             {  signals: ["B0", "B1", "B2"],
-                                name: "cluster2" },],
-                  method:   "Method" }
-
-
+function addClustering(clustering:Clustering){
+  
   checkExistingClustering(clustering);
 
   const clusteringBnode = bnode();
   n3store.addTriple(clusteringBnode, TYPE, OMA+"Clustering");
-  //n3store.addTriple(clusteringBnode, OMA+"method", literal(clustering.method, "string"));
   n3store.addTriple(clusteringBnode, OMA+"method", OMA+clustering.method);
 
   for (let item of clustering.features) {
@@ -287,6 +280,7 @@ function addClustering(clustering){
     const clusterBnode = bnode();
     n3store.addTriple(clusterBnode, TYPE, OMA+"Cluster");
     n3store.addTriple(clusterBnode, LABEL, literal(cluster.name, "string"));
+    n3store.addTriple(clusterBnode, LABEL, literal(cluster.centroid, "string"));
     n3store.addTriple(clusteringBnode, OMA+"has_cluster", clusterBnode);
 
     for (let signal of cluster.signals) {
