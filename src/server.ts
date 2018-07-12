@@ -5,7 +5,7 @@ import * as store from './store';
 import * as featureDb from './feature-db';
 import { toDbFeatures } from './util';
 import * as textures from './textures';
-import { RecordSide } from './types';
+import { RecordSide, Clustering } from './types';
 import { EXAMPLERECORDSIDE, LONGEXAMPLERECORDSIDE } from './test';
 
 const PORT = process.env.PORT || 8060;
@@ -23,7 +23,13 @@ app.post('/record', async (req, res) => {
   const docIds = await Promise.all(side.soundObjects
     .map(o => featureDb.insertFeatures(toDbFeatures(o))));
   side.soundObjects.forEach((o,i) => o.featureGuid = docIds[i].toHexString());
-  res.send(store.addRecordSide(side));
+  res.send(await store.addRecordSide(side));
+});
+
+app.post('/clustering', async (req, res) => {
+  const clustering = <Clustering>req.body;
+  //TODO THOMAS
+  //res.send(await store.addClustering(clustering));
 });
 
 app.get('/records', (req, res) => {
