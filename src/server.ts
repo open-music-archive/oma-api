@@ -38,11 +38,15 @@ app.get('/awesome', async (req, res) => {
   res.send(await featureDb.getAwesomeLoop());
 });
 
+app.get('/features', async (req, res) => {
+  res.send(await featureDb.getAllNormalFeatures());
+});
+
 app.listen(PORT, async () => {
-  //await featureDb.connect();
+  await featureDb.connect();
   console.log('open music archive server started at http://localhost:' + PORT);
   //console.log(await featureDb.getAwesomeLoop())
-  test();
+  //test();
 });
 
 async function test() {

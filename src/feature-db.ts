@@ -7,8 +7,6 @@ const AWESOME_LOOPS = "awesomeLoops";
 
 let db: Db;
 
-console.log("INIT DB")
-
 export function connect() {
   return MongoClient.connect(URL)
     .then(client => db = client.db('openmusicarchive'));
@@ -24,8 +22,8 @@ export async function insertFeatures(features: DbSoundObjectFeatures): Promise<O
   return (await db.collection(FEATURES).insertOne(features)).insertedId;
 }
 
-export async function getAllFeatures(): Promise<DbSoundObjectFeatures[]> {
-  return db.collection(FEATURES).find({}).toArray();
+export async function getAllNormalFeatures(): Promise<DbSoundObjectFeatures[]> {
+  return db.collection(FEATURES).find({}).project({"normalFeatures": 1}).toArray();
 }
 
 export async function getLongestSoundObjects(count: number): Promise<DbSoundObject[]> {
