@@ -1,3 +1,4 @@
+import * as fs from 'fs';
 import { SoundObject } from './types';
 import { DbSoundObjectFeatures } from './db-types';
 

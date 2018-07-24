@@ -8,4 +8,4 @@ lib
 
 test
 src/config.js
-src/test.ts
+src/test-data/long-record-side.json

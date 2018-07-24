@@ -1,0 +1,15 @@
+{
+    "features": ["MFCC", "Chroma"],
+    "clusters": [{
+            "signals": ["A0", "A1", "A2"],
+            "name": "cluster1",
+            "centroid": "0, 1, 2"
+        },
+        {
+            "signals": ["B0", "B1", "B2"],
+            "name": "cluster2",
+            "centroid": "0, 1, 2"
+        },
+    ],
+    "method": "Method"
+}

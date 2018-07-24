@@ -1,6 +1,8 @@
 import { MongoClient, Db, ObjectID } from 'mongodb';
 import { URL } from './config';
+import { RecordSide } from './types';
 import { DbSoundObject, DbSoundObjectFeatures } from './db-types';
+import { toDbFeatures } from './util';
 
 const FEATURES = "soundObjectFeatures";
 const AWESOME_LOOPS = "awesomeLoops";
@@ -8,7 +10,7 @@ const AWESOME_LOOPS = "awesomeLoops";
 let db: Db;
 
 export function connect() {
-  return MongoClient.connect(URL)
+  return MongoClient.connect(URL, { useNewUrlParser: true })
     .then(client => db = client.db('openmusicarchive'));
 }
 
@@ -18,7 +20,14 @@ export function getAwesomeLoop(): Promise<{}> {
   ).toArray().then(r => r[0]);
 }
 
-export async function insertFeatures(features: DbSoundObjectFeatures): Promise<ObjectID> {
+//posts the side to the feature db and updates the featureGuids
+export async function insertRecordSide(side: RecordSide) {
+  const docIds = await Promise.all(side.soundObjects
+    .map(o => insertFeatures(toDbFeatures(o))));
+  side.soundObjects.forEach((o,i) => o.featureGuid = docIds[i].toHexString());
+}
+
+async function insertFeatures(features: DbSoundObjectFeatures): Promise<ObjectID> {
   return (await db.collection(FEATURES).insertOne(features)).insertedId;
 }
 

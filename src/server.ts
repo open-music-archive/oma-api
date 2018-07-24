@@ -3,10 +3,9 @@ import * as bodyParser from 'body-parser';
 import * as fs from 'fs';
 import * as store from './store';
 import * as featureDb from './feature-db';
-import { toDbFeatures } from './util';
 import * as textures from './textures';
 import { RecordSide, Clustering } from './types';
-import { EXAMPLERECORDSIDE, LONGEXAMPLERECORDSIDE } from './test';
+import { addTestRecordSide, transferAllJsonToFeatureDb } from './test';
 
 const PORT = process.env.PORT || 8060;
 
@@ -20,10 +19,9 @@ app.use((req, res, next) => {
 
 app.post('/record', async (req, res) => {
   const side = <RecordSide>req.body;
-  const docIds = await Promise.all(side.soundObjects
-    .map(o => featureDb.insertFeatures(toDbFeatures(o))));
-  side.soundObjects.forEach((o,i) => o.featureGuid = docIds[i].toHexString());
-  res.send(await store.addRecordSide(side));
+  await featureDb.insertRecordSide(side);
+  await store.addRecordSide(side);
+  res.send();
 });
 
 app.post('/clustering', async (req, res) => {
@@ -51,28 +49,7 @@ app.get('/features', async (req, res) => {
 app.listen(PORT, async () => {
   await featureDb.connect();
   console.log('open music archive server started at http://localhost:' + PORT);
-  //console.log(await featureDb.getAwesomeLoop())
-  //test();
+  //addTestRecordSide();
+  await transferAllJsonToFeatureDb('/Users/flo/Projects/Code/FAST/open-music-archive/96kHz/');
+  console.log("DONE!")
 });
-
-async function test() {
-  addTestRecordSide();
-  //await addTestFeature();
-  //console.log(JSON.stringify(await featureDb.getLongestSoundObjects(3), null, 2));
-  //textures.generateLoop();
-}
-
-function addTestRecordSide() {
-  store.addRecordSide(LONGEXAMPLERECORDSIDE)
-  //store.addRecordSide(EXAMPLERECORDSIDE)
-}
-
-async function addTestFeature() {
-  const docId = await featureDb.insertFeatures({
-    _id: undefined,
-    duration: Math.random(),
-    normalFeatures: [Math.random()],
-    audioUri: Math.random()+".wav",
-    features: [{name: "amp", mean: Math.random(), var: Math.random()}]
-  });
-}
