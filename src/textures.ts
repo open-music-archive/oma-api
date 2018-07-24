@@ -32,7 +32,9 @@ async function addRandomOnsetDymo(parentUri: string, audioUri: string, maxOnset:
   await dymoGen.setDymoParameter(dymo, uris.REVERB, reverb);
   const delay = _.random(2) ? 0 : Math.random();
   await dymoGen.setDymoParameter(dymo, uris.DELAY, delay);
-  await dymoGen.setDymoParameter(dymo, uris.PAN, Math.random()*4);
+  await dymoGen.setDymoParameter(dymo, uris.PAN, Math.random()-0.5);
+  await dymoGen.setDymoParameter(dymo, uris.DISTANCE, Math.random()-0.5);
+  await dymoGen.setDymoParameter(dymo, uris.HEIGHT, Math.random()-0.5);
   return dymo;
   //const params = await dymoGen.getStore().findAllObjects(dymo, uris.HAS_PARAMETER);
   //params.forEach(async p => console.log(await dymoGen.getStore().findObjectValue(p, uris.VALUE)))
