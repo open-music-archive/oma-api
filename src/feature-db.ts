@@ -1,4 +1,5 @@
 import { MongoClient, Db, ObjectID } from 'mongodb';
+import * as _ from 'lodash';
 import { URL } from './config';
 import { RecordSide } from './types';
 import { DbSoundObject, DbSoundObjectFeatures } from './db-types';
@@ -6,6 +7,7 @@ import { toDbFeatures } from './util';
 
 const FEATURES = "soundObjectFeatures";
 const AWESOME_LOOPS = "awesomeLoops";
+const CURRENT_SIZE = 38042;
 
 let db: Db;
 
@@ -33,6 +35,22 @@ async function insertFeatures(features: DbSoundObjectFeatures): Promise<ObjectID
 
 export async function getAllNormalFeatures(): Promise<DbSoundObjectFeatures[]> {
   return db.collection(FEATURES).find({}).project({"normalFeatures": 1}).toArray();
+}
+
+export async function getLongAndShortObjects(long: number, short: number): Promise<DbSoundObject[]> {
+  const longs = _.sampleSize(await getLongestSoundObjects(CURRENT_SIZE/100), long);
+  const shorts = _.sampleSize(await getShortestSoundObjects(CURRENT_SIZE/100), short);
+  return longs.concat(shorts);
+}
+
+export async function getLoudestObjects(count: number): Promise<DbSoundObject[]> {
+  return db.collection(FEATURES)
+    .aggregate([
+      { $project: { amp: { $arrayElemAt: [ "$features", 2 ] }}},
+      { $project: { amp: "$amp.mean" }}
+    ])
+    .limit(count)
+    .toArray();
 }
 
 export async function getLongestSoundObjects(count: number): Promise<DbSoundObject[]> {
