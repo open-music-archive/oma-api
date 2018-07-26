@@ -9,7 +9,9 @@ const ONTOLOGIES_PATH = 'https://raw.githubusercontent.com/semantic-player/dymo-
 let dymoGen = new DymoGenerator();
 
 export async function generateTexture(): Promise<string> {
-  const objects = await featureDb.getLongAndShortObjects(_.random(25), _.random(25));
+  /*const objects = await featureDb.getLongAndShortObjects(_.random(25), _.random(25));
+  return generateRandomConcatLoop(objects);*/
+  const objects = await featureDb.getLoudestSoundObjectsOfDuration(Math.random()/2+0.125, _.random(25));
   return generateRandomConcatLoop(objects);
 }
 

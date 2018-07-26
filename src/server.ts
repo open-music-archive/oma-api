@@ -50,6 +50,6 @@ app.listen(PORT, async () => {
   await featureDb.connect();
   console.log('open music archive server started at http://localhost:' + PORT);
   //addTestRecordSide();
-  console.log(await featureDb.getLoudestObjects(3));
+  //console.log(await featureDb.getLoudestSoundObjectsOfDuration(0.25, 3));
   //await transferAllJsonToFeatureDb('/Users/flo/Projects/Code/FAST/open-music-archive/96kHz/');
 });
