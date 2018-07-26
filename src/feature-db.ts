@@ -40,8 +40,8 @@ export async function getAllNormalFeatures(): Promise<DbSoundObjectFeatures[]> {
 }
 
 export async function getLongAndShortObjects(long: number, short: number): Promise<DbSoundObject[]> {
-  const longs = _.sampleSize(await getLongestSoundObjects(NUM_OBJECTS/100), long);
-  const shorts = _.sampleSize(await getShortestSoundObjects(NUM_OBJECTS/100), short);
+  const longs = _.sampleSize(await getLongestSoundObjects(NUM_OBJECTS/50), long);
+  const shorts = _.sampleSize(await getShortestSoundObjects(NUM_OBJECTS/50), short);
   return longs.concat(shorts);
 }
 
@@ -89,7 +89,7 @@ function getMax(field: string, count: number): Object[] {
 
 function getSorted(field: string, direction: number, count: number): Object[] {
   const sort = {};
-  sort[field] = -1;
+  sort[field] = direction;
   return [
     { $sort: sort },
     { $limit: count }
