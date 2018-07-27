@@ -9,13 +9,18 @@ const ONTOLOGIES_PATH = 'https://raw.githubusercontent.com/semantic-player/dymo-
 let dymoGen = new DymoGenerator();
 
 export async function generateTexture(): Promise<string> {
-  const objects = await featureDb.getLongAndShortObjects(_.random(25), _.random(25));
-  return generateRandomOnsetLoop(objects);
-  /*const objects = await featureDb.getLoudestSoundObjectsOfDuration(Math.random()/2+0.125, _.random(25));
-  return generateRandomConcatLoop(objects);*/
+  //return generateRandomOnsetLoop(objects);
+  //return generateRandomConcatLoop();
+  return generateSimilarityLoop();
 }
 
-async function generateRandomConcatLoop(objects: DbSoundObject[]): Promise<string> {
+async function generateVaryingLoop(): Promise<string> {
+  const objects = await featureDb.getLongAndShortObjects(50, 50);
+  return getJsonldAndReset();
+}
+
+async function generateSimilarityLoop(): Promise<string> {
+  const objects = await featureDb.getSimilarSoundObjects(await featureDb.getRandomSoundObject());
   const audioUris = objects.map(o => o.audioUri);
   const loop = await dymoGen.addDymo(null, null, uris.SEQUENCE);
   await dymoGen.setDymoParameter(loop, uris.LOOP, 1);
@@ -23,14 +28,26 @@ async function generateRandomConcatLoop(objects: DbSoundObject[]): Promise<strin
   return getJsonldAndReset();
 }
 
-async function generateRandomOnsetLoop(objects: DbSoundObject[]): Promise<string> {
+async function generateRandomConcatLoop(): Promise<string> {
+  const objects = await featureDb.getLoudestSoundObjectsOfDuration(Math.random()/2+0.125, _.random(25));
   const audioUris = objects.map(o => o.audioUri);
   const loop = await dymoGen.addDymo(null, null, uris.SEQUENCE);
   await dymoGen.setDymoParameter(loop, uris.LOOP, 1);
-  const loopDuration = (4*Math.random()+2);
+  await Promise.all(audioUris.map(a => addRandomDymo(loop, a, true, true)));
+  return getJsonldAndReset();
+}
+
+async function generateRandomOnsetLoop(): Promise<string> {
+  const objects = await featureDb.getLongAndShortObjects(_.random(25), _.random(25));
+  const audioUris = objects.map(o => o.audioUri);
+  const loop = await dymoGen.addDymo(null, null, uris.SEQUENCE);
+  await dymoGen.setDymoParameter(loop, uris.LOOP, 1);
+  const loopDuration = 4*Math.random()+2;
   await Promise.all(audioUris.map(a => addRandomOnsetDymo(loop, a, loopDuration)));
   return getJsonldAndReset();
 }
+
+//// DYMO GENERATING FUNTIONS
 
 async function addRandomOnsetDymo(parentUri: string, audioUri: string, maxOnset: number) {
   const dymo = await addRandomDymo(parentUri, audioUri, true, true);

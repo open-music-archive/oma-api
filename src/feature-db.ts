@@ -1,12 +1,13 @@
 import { MongoClient, Db, ObjectID } from 'mongodb';
 import * as _ from 'lodash';
 import { URL } from './config';
-import { RecordSide } from './types';
+import { RecordSide, Clustering, Cluster } from './types';
 import { DbSoundObject, DbSoundObjectFeatures } from './db-types';
 import { toDbFeatures } from './util';
 
 const FEATURES = "soundObjectFeatures";
 const AWESOME_LOOPS = "awesomeLoops";
+const CLUSTERINGS = "clusterings";
 const AMP_FEATURE = 2;
 
 let db: Db;
@@ -18,11 +19,7 @@ export async function connect() {
   NUM_OBJECTS = await db.collection(FEATURES).countDocuments();
 }
 
-export function getAwesomeLoop(): Promise<{}> {
-  return db.collection(AWESOME_LOOPS).aggregate(
-    [{ $sample: { size: 1 } }]
-  ).toArray().then(r => r[0]);
-}
+// INSERT FUNCTIONS
 
 //posts the side to the feature db and updates the featureGuids
 export async function insertRecordSide(side: RecordSide) {
@@ -35,8 +32,39 @@ async function insertFeatures(features: DbSoundObjectFeatures): Promise<ObjectID
   return (await db.collection(FEATURES).insertOne(features)).insertedId;
 }
 
+export async function insertClustering(clustering: Clustering): Promise<ObjectID> {
+  return (await db.collection(CLUSTERINGS).insertOne(clustering)).insertedId;
+}
+
+// QUERY FUNCTIONS
+
+export function getAwesomeLoop(): Promise<{}> {
+  return db.collection(AWESOME_LOOPS).aggregate(
+    [{ $sample: { size: 1 } }]
+  ).toArray().then(r => r[0]);
+}
+
 export async function getAllNormalFeatures(): Promise<DbSoundObjectFeatures[]> {
   return db.collection(FEATURES).find({}).project({"normalFeatures": 1}).toArray();
+}
+
+export async function getRandomSoundObject(): Promise<DbSoundObject> {
+  return aggregateSoundObjects([{ $sample: { size: 1 } }]).then(s => s[0]);
+}
+
+export async function getSimilarSoundObjects(object: DbSoundObject): Promise<DbSoundObject[]> {
+  const cluster: Cluster = (await db.collection(CLUSTERINGS).aggregate([
+    { $project: { clusters: {
+      $filter: { input: "$clusters", as: "c", cond: {
+        $in: [ object._id.toHexString(), "$$c.signals" ]
+      } }
+    } } },
+    { $unwind: "$clusters" },
+    { $replaceRoot: { newRoot: "$clusters" } },
+    { $project: { signals: 1 }}
+  ]).toArray())[1]; //switch clustering here!
+  const ids = cluster.signals.map(s => new ObjectID(s));
+  return findSoundObjects({ _id: { $in: ids } });
 }
 
 export async function getLongAndShortObjects(long: number, short: number): Promise<DbSoundObject[]> {
@@ -46,25 +74,24 @@ export async function getLongAndShortObjects(long: number, short: number): Promi
 }
 
 export async function getLoudestSoundObjectsOfDuration(duration: number, count: number): Promise<DbSoundObject[]> {
-  let aggregate = getClosest("duration", duration, count*10)
-    .concat(getMaxFeature(AMP_FEATURE, count));
-  return getSoundObjects(aggregate);
+  return aggregateSoundObjects(getClosest("duration", duration, count*10)
+    .concat(getMaxFeature(AMP_FEATURE, count)));
 }
 
-export async function getLoudestObjects(count: number): Promise<DbSoundObject[]> {
-  return getSoundObjects(getMaxFeature(AMP_FEATURE, count));
+export async function getLoudestSoundObjects(count: number): Promise<DbSoundObject[]> {
+  return aggregateSoundObjects(getMaxFeature(AMP_FEATURE, count));
 }
 
 export async function getSoundObjectsOfDuration(duration: number, count: number): Promise<DbSoundObject[]> {
-  return getSoundObjects(getClosest("duration", duration, count));
+  return aggregateSoundObjects(getClosest("duration", duration, count));
 }
 
 export async function getLongestSoundObjects(count: number): Promise<DbSoundObject[]> {
-  return getSoundObjects(getMax("duration", count));
+  return aggregateSoundObjects(getMax("duration", count));
 }
 
 export async function getShortestSoundObjects(count: number): Promise<DbSoundObject[]> {
-  return getSoundObjects(getMin("duration", count));
+  return aggregateSoundObjects(getMin("duration", count));
 }
 
 function getMaxFeature(featureIndex: number, count: number): Object[] {
@@ -104,9 +131,16 @@ function getClosest(field: string, value: number, count: number): Object[] {
   ];
 }
 
-async function getSoundObjects(aggregate: Object[]): Promise<DbSoundObject[]> {
+async function aggregateSoundObjects(aggregate: Object[]): Promise<DbSoundObject[]> {
   return db.collection(FEATURES)
     .aggregate(aggregate)
+    .project({"audioUri": 1, "duration": 1})
+    .toArray();
+}
+
+async function findSoundObjects(query: Object): Promise<DbSoundObject[]> {
+  return db.collection(FEATURES)
+    .find(query)
     .project({"audioUri": 1, "duration": 1})
     .toArray();
 }

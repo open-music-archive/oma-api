@@ -28,6 +28,9 @@ app.post('/clustering', async (req, res) => {
   const clustering = <Clustering>req.body;
   //TODO THOMAS
   //res.send(await store.addClustering(clustering));
+
+  //for now: add to feature db
+  featureDb.insertClustering(clustering);
 });
 
 app.get('/records', (req, res) => {
@@ -50,6 +53,8 @@ app.listen(PORT, async () => {
   await featureDb.connect();
   console.log('open music archive server started at http://localhost:' + PORT);
   //addTestRecordSide();
+  //let obj = (await featureDb.getLoudestSoundObjects(1))[0];
+  //console.log(JSON.stringify(await featureDb.getSimilarSoundObjects(obj)));
   //console.log(await featureDb.getShortestSoundObjects(3))
   //console.log(await featureDb.getLoudestSoundObjectsOfDuration(0.25, 3));
   //await transferAllJsonToFeatureDb('/Users/flo/Projects/Code/FAST/open-music-archive/96kHz/');
