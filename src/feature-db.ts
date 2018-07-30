@@ -52,6 +52,11 @@ export async function getRandomSoundObject(): Promise<DbSoundObject> {
   return aggregateSoundObjects([{ $sample: { size: 1 } }]).then(s => s[0]);
 }
 
+export async function getSimilarAudio(audioUri: string): Promise<string> {
+  const soundObject = (await findSoundObjects({ audioUri: audioUri }))[0];
+  return _.sample(await getSimilarSoundObjects(soundObject)).audioUri;
+}
+
 export async function getSimilarSoundObjects(object: DbSoundObject): Promise<DbSoundObject[]> {
   const cluster: Cluster = (await db.collection(CLUSTERINGS).aggregate([
     { $project: { clusters: {
