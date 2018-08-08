@@ -1,4 +1,7 @@
+import * as https from 'https';
+import * as readline from 'readline';
 import * as fs from 'fs';
+import * as _ from 'lodash';
 import * as store from './store';
 import * as db from './feature-db';
 
@@ -15,6 +18,22 @@ export async function transferAllJsonToFeatureDb(dir: string) {
     writeJson(dir+f, side);
     console.log("done with", f);
   });
+}
+
+export async function saveRandomSoundObjectsToDisk(count: number, dir: string) {
+  //const objects = await db.getRandomSoundObjects(count);
+  let objects = await db.getSoundObjectsOfDuration(0.5, count*10);
+  objects = _.sampleSize(objects, count);
+  writeJson(dir+"objects.json", objects);
+  mapSeries(objects, (o,i) => new Promise(resolve => {
+    var file = fs.createWriteStream(dir+i+".wav");
+    https.get(o.audioUri, response => {
+      resolve();
+      response.pipe(file);
+      readline.cursorTo(process.stdout, 0);
+      process.stdout.write(i+"");
+    });
+  }));
 }
 
 function getAllJsonFiles(path: string) {

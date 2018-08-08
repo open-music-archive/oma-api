@@ -1,12 +1,11 @@
 import * as express from 'express';
 import * as bodyParser from 'body-parser';
 import * as socketIO from 'socket.io';
-import * as fs from 'fs';
 import * as store from './store';
 import * as featureDb from './feature-db';
 import { TextureGenerator } from './textures';
 import { RecordSide, Clustering } from './types';
-import { addTestRecordSide, transferAllJsonToFeatureDb } from './test';
+import * as test from './test';
 import { CompositionStream } from './live-stream';
 
 const PORT = process.env.PORT || 8060;
@@ -61,6 +60,7 @@ const server = app.listen(PORT, async () => {
   //console.log(await featureDb.getShortestSoundObjects(3))
   //console.log(await featureDb.getLoudestSoundObjectsOfDuration(0.25, 3));
   //await transferAllJsonToFeatureDb('/Users/flo/Projects/Code/FAST/open-music-archive/96kHz/');
+  await test.saveRandomSoundObjectsToDisk(100, '../100/')
 });
 
 const io = socketIO.listen(server);

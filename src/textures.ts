@@ -51,7 +51,7 @@ export class TextureGenerator {
   }
 
   private async generateSimilarityLoop(parentUri?: string): Promise<string> {
-    const objects = await featureDb.getSimilarSoundObjects(await featureDb.getRandomSoundObject());
+    const objects = await featureDb.getSimilarSoundObjects((await featureDb.getRandomSoundObjects(1))[0]);
     const audioUris = objects.map(o => o.audioUri);
     const loop = await this.dymoGen.addDymo(parentUri, null, uris.SEQUENCE);
     await this.dymoGen.setDymoParameter(loop, uris.REPEAT, 3);

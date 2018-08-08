@@ -48,8 +48,8 @@ export async function getAllNormalFeatures(): Promise<DbSoundObjectFeatures[]> {
   return db.collection(FEATURES).find({}).project({"normalFeatures": 1}).toArray();
 }
 
-export async function getRandomSoundObject(): Promise<DbSoundObject> {
-  return aggregateSoundObjects([{ $sample: { size: 1 } }]).then(s => s[0]);
+export async function getRandomSoundObjects(count: number): Promise<DbSoundObject[]> {
+  return aggregateSoundObjects([{ $sample: { size: count } }]);
 }
 
 export async function getSimilarAudio(audioUri: string): Promise<string> {
