@@ -60,7 +60,7 @@ const server = app.listen(PORT, async () => {
   //console.log(await featureDb.getShortestSoundObjects(3))
   //console.log(await featureDb.getLoudestSoundObjectsOfDuration(0.25, 3));
   //await transferAllJsonToFeatureDb('/Users/flo/Projects/Code/FAST/open-music-archive/96kHz/');
-  await test.saveRandomSoundObjectsToDisk(100, '../100/')
+  //await test.saveRandomSoundObjectsToDisk(100, '../100/')
 });
 
 const io = socketIO.listen(server);
