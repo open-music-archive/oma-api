@@ -57,6 +57,18 @@ export async function getSimilarAudio(audioUri: string): Promise<string> {
   return _.sample(await getSimilarSoundObjects(soundObject)).audioUri;
 }
 
+export async function removeNonClusteredIds() {
+  const idsInClusters: string[] = (await db.collection(CLUSTERINGS).aggregate([
+    { $unwind: "$clusters" },
+    { $replaceRoot: { newRoot: "$clusters" } },
+    { $unwind: "$signals" },
+    { $group : { _id : null, ids: { $push: "$signals" } } }
+  ]).toArray())[0].ids;
+  const oidsInClusters = _.uniq(idsInClusters).map(i => new ObjectID(i));
+  return db.collection(FEATURES)
+    .remove({_id: {$nin: oidsInClusters}});
+}
+
 export async function getSimilarSoundObjects(object: DbSoundObject): Promise<DbSoundObject[]> {
   const cluster: Cluster = (await db.collection(CLUSTERINGS).aggregate([
     { $project: { clusters: {
@@ -66,7 +78,7 @@ export async function getSimilarSoundObjects(object: DbSoundObject): Promise<DbS
     } } },
     { $unwind: "$clusters" },
     { $replaceRoot: { newRoot: "$clusters" } },
-    { $project: { signals: 1 }}
+    { $project: { signals: 1 } }
   ]).toArray())[1]; //switch clustering here!
   const ids = cluster.signals.map(s => new ObjectID(s));
   return findSoundObjects({ _id: { $in: ids } });
