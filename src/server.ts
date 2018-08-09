@@ -11,11 +11,12 @@ import { CompositionStream } from './live-stream';
 const PORT = process.env.PORT || 8060;
 
 const textures = new TextureGenerator();
+let composition: CompositionStream;
 
 const app = express();
 app.use(bodyParser.json({limit: '50mb'}));
 app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "http://localhost:4200 https://open-music-archive.github.io");
+  res.header("Access-Control-Allow-Origin", "http://localhost:4200 https://open-music-archive.github.io http://evil.com/");
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
   next();
 });
@@ -54,6 +55,7 @@ app.get('/features', async (req, res) => {
 const server = app.listen(PORT, async () => {
   await featureDb.connect();
   console.log('open music archive server started at http://localhost:' + PORT);
+  initStreamAndSockets();
   //addTestRecordSide();
   //let obj = (await featureDb.getLoudestSoundObjects(1))[0];
   //console.log(JSON.stringify(await featureDb.getSimilarSoundObjects(obj)));
@@ -61,14 +63,23 @@ const server = app.listen(PORT, async () => {
   //console.log(await featureDb.getLoudestSoundObjectsOfDuration(0.25, 3));
   //await transferAllJsonToFeatureDb('/Users/flo/Projects/Code/FAST/open-music-archive/96kHz/');
   //await test.saveRandomSoundObjectsToDisk(100, '../100/')
+  //console.log(await featureDb.removeNonClusteredIds())
+  //composition.getTextureStream().subscribe(t => console.log(t));
+
 });
 
-const io = socketIO.listen(server);
+function initStreamAndSockets() {
+  composition = new CompositionStream();
 
-const composition = new CompositionStream();
+  const io = socketIO.listen(server);
 
-io.on('connection', socket => {
-  console.log('client connected', socket.handshake.headers.origin);
-  setInterval(async () => socket.emit('live-stream', await composition.getNextTexture()), 5000);
-  socket.on('disconnect', socket => console.log('client disconnected', socket.handshake.headers.origin));
-});
+  //io.origins(['http://localhost:4200', 'http://evil.com']);
+
+  io.on('connection', socket => {
+    console.log('client connected', socket.handshake.headers.origin);
+    if (composition) {
+      composition.getTextureStream().subscribe(t => socket.emit('live-stream', t));
+    }
+    socket.on('disconnect', socket => console.log('client disconnected', socket));
+  });
+}

@@ -1,19 +1,28 @@
+import { Observable } from 'rxjs/Observable';
+import { BehaviorSubject } from 'rxjs/BehaviorSubject';
 import { TextureGenerator } from './textures';
 
 export class CompositionStream {
 
-  private textures = new TextureGenerator();
-  private currentTexture: string;
+  private generator = new TextureGenerator();
+  private textures: BehaviorSubject<string>;
 
-  async getCurrentTexture(): Promise<string> {
-    if (!this.currentTexture) {
-      this.currentTexture = await this.textures.generateVariation();
-    }
-    return this.currentTexture;
+  constructor() {
+    this.textures = new BehaviorSubject("");
+    this.start();
   }
 
-  async getNextTexture(): Promise<string> {
-    return this.textures.generateVariation();
+  private start() {
+    this.updateTexture();
+    setInterval(async () => this.updateTexture(), 5000);
+  }
+
+  getTextureStream(): Observable<string> {
+    return this.textures.asObservable();
+  }
+
+  private async updateTexture() {
+    this.textures.next(await this.generator.generateVariation());
   }
 
 }
