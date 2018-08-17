@@ -72,14 +72,12 @@ function initStreamAndSockets() {
   composition = new CompositionStream();
 
   const io = socketIO.listen(server);
-
   //io.origins(['http://localhost:4200', 'http://evil.com']);
 
   io.on('connection', socket => {
     console.log('client connected', socket.handshake.headers.origin);
-    if (composition) {
-      composition.getTextureStream().subscribe(t => socket.emit('live-stream', t));
-    }
+    composition.getTextureStream()
+      .subscribe(t => socket.emit('live-stream', t.jsonld));
     socket.on('disconnect', socket => console.log('client disconnected', socket));
   });
 }
