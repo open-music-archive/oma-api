@@ -11,7 +11,6 @@ export interface Texture {
 export class TextureGenerator {
 
   private dymoGen = new DymoGenerator();
-  private latestTexture: string;
 
   async generateOneoffTexture(duration?: number): Promise<Texture> {
     //return generateRandomOnsetLoop(objects);
@@ -19,18 +18,18 @@ export class TextureGenerator {
     //return generateSimilarityLoop();
     //return generateVaryingLoop();
     //this.latestTexture = this.generateSequenceOfLoops();
-    this.latestTexture = await this.addRandomConcatSequence();
+    const textureUri = await this.addRandomConcatSequence();
     //await this.addRandomOnsetSequence(await featureDb.getLongAndShortObjects(10,0), 5);
-    return this.getLatestTextureObject();
+    return this.getTextureObject(textureUri);
   }
 
-  async generateVariation(duration?: number): Promise<Texture> {
-    if (!this.latestTexture) { //create a new texture
-      return this.generateOneoffTexture(duration);
-    }
-    //vary the existing texture (replace one audio file)
-    this.latestTexture = await this.dymoGen.addDeepCopy(this.latestTexture);
-    const allDymos = await this.dymoGen.getStore().findAllObjectsInHierarchy(this.latestTexture);
+  async generateVariation(modelJsonld: string): Promise<Texture> {
+    //load the model texture
+    await this.dymoGen.getStore().loadData(modelJsonld);
+    const modelUri = (await this.dymoGen.getStore().findTopDymos())[0];
+    //create the variation (replace one audio file)
+    const variationUri = await this.dymoGen.addDeepCopy(modelUri);
+    const allDymos = await this.dymoGen.getStore().findAllObjectsInHierarchy(variationUri);
     const sources = await Promise.all(allDymos.map(async d => await this.dymoGen.getStore().getSourcePath(d)));
     const dymosWithSources = allDymos.filter((_,i) => sources[i]);
     const randomDymo = _.sample(dymosWithSources);
@@ -39,13 +38,13 @@ export class TextureGenerator {
     if (similarAudio) {
       await this.dymoGen.getStore().setValue(randomDymo, uris.HAS_SOURCE, similarAudio);
     }
-    return this.getLatestTextureObject();
+    return this.getTextureObject(variationUri);
   }
 
-  private async getLatestTextureObject() {
-    const duration = await this.dymoGen.getStore()
-      .findParameterValue(this.latestTexture, uris.DURATION);
-    return {jsonld: await this.getJsonld(this.latestTexture), duration: duration};
+  private async getTextureObject(uri: string): Promise<Texture> {
+    //console.log(await this.dymoGen.getStore().size())
+    const duration = await this.dymoGen.getStore().findParameterValue(uri, uris.DURATION);
+    return {jsonld: await this.getJsonldAndReset(uri), duration: duration};
   }
 
   private async generateSequenceOfLoops(): Promise<any> {
@@ -64,7 +63,7 @@ export class TextureGenerator {
     return loop;
   }
 
-  private async addRandomConcatLoop(): Promise<any> {
+  private async addRandomConcatLoop(): Promise<string> {
     const loop = await this.addRandomConcatSequence();
     await this.dymoGen.setDymoParameter(loop, uris.LOOP, 1);
     return loop;
@@ -76,21 +75,22 @@ export class TextureGenerator {
     return loop;
   }
 
-  private async addRhythmicalSequence(duration?: number): Promise<any> {
-
+  private async addRhythmicalSequence(duration?: number): Promise<string> {
+    return ''
   }
 
-  private async addRandomConcatSequence(): Promise<any> {
-    const concat = await this.dymoGen.addDymo(null, null, uris.SEQUENCE);
-    let objects = await featureDb.getLoudestSoundObjectsOfDuration(Math.random()/2+0.125, _.random(25));
+  private async addRandomConcatSequence(): Promise<string> {
+    const sequence = await this.dymoGen.addDymo(null, null, uris.SEQUENCE);
+    let objects = await featureDb.getLoudestSoundObjectsOfDuration(Math.random()/2+0.125, _.random(25)+1);
     let totalDuration = _.sum(objects.map(o => o.duration));
-    await this.dymoGen.setDymoParameter(concat, uris.DURATION, totalDuration);
+    await this.dymoGen.setDymoParameter(sequence, uris.DURATION, totalDuration);
     const audioUris = objects.map(o => o.audioUri);
-    await Promise.all(audioUris.map(a => this.addRandomDymo(concat, a, true, true)));
+    await Promise.all(audioUris.map(a => this.addRandomDymo(sequence, a, true, true)));
+    return sequence;
   }
 
   private async addRandomOnsetSequence(objects?: DbSoundObject[], duration?: number): Promise<string> {
-    objects = objects ? objects : await featureDb.getLongAndShortObjects(_.random(25), _.random(25));
+    objects = objects ? objects : await featureDb.getLongAndShortObjects(_.random(25)+1, _.random(25)+1);
     const audioUris = objects.map(o => o.audioUri);
     const sequence = await this.dymoGen.addDymo(null, null, uris.SEQUENCE);
     const loopDuration = duration ? duration : 4*Math.random()+2;
@@ -124,17 +124,15 @@ export class TextureGenerator {
     return dymo;
   }
 
-  private getJsonldAndReset(): Promise<string> {
-    const jsonld = this.getJsonld();
+  private async getJsonldAndReset(dymoUri?: string): Promise<string> {
+    let jsonld: string;
+    if (dymoUri) {
+      jsonld = await this.dymoGen.getStore().uriToJsonld(dymoUri);
+    } else {
+      jsonld = await this.dymoGen.getTopDymoJsonld();
+    }
     this.dymoGen = new DymoGenerator();
     return jsonld;
-  }
-
-  private getJsonld(dymoUri?: string): Promise<string> {
-    if (dymoUri) {
-      return this.dymoGen.getStore().uriToJsonld(dymoUri);
-    }
-    return this.dymoGen.getTopDymoJsonld();
   }
 
 }
