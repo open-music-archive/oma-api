@@ -6,7 +6,7 @@ import * as featureDb from './feature-db';
 import { RecordSide, Clustering } from './types';
 import * as test from './test';
 import { CompositionStream } from './live-stream';
-import { RandomOnset } from './textures';
+import { RandomOnset, RandomConcat, SoundMaterial } from './textures';
 
 const PORT = process.env.PORT || 8060;
 
@@ -75,6 +75,8 @@ function initStreamAndSockets() {
   }));
   //palatable and fun:
   //composition = new CompositionStream(2000, true, 'addRandomOnsetSequence', [null, 1]);
+  //previous similarity loop:
+  //new RandomConcat({materialType:SoundMaterial.Similars, repeat:3});
 
   const io = socketIO.listen(server);
   //io.origins(['http://localhost:4200', 'http://evil.com']);
