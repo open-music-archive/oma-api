@@ -3,14 +3,13 @@ import * as bodyParser from 'body-parser';
 import * as socketIO from 'socket.io';
 import * as store from './store';
 import * as featureDb from './feature-db';
-import { TextureGenerator } from './textures';
 import { RecordSide, Clustering } from './types';
 import * as test from './test';
 import { CompositionStream } from './live-stream';
+import { RandomOnset } from './textures';
 
 const PORT = process.env.PORT || 8060;
 
-const textures = new TextureGenerator();
 let composition: CompositionStream;
 
 const app = express();
@@ -41,7 +40,7 @@ app.get('/records', (req, res) => {
 });
 
 app.get('/texture', async (req, res) => {
-  res.send(await textures.generateOneoffTexture());
+  res.send(await new RandomOnset(undefined, true));
 });
 
 app.get('/awesome', async (req, res) => {
@@ -70,8 +69,8 @@ const server = app.listen(PORT, async () => {
 
 function initStreamAndSockets() {
   //nice and experimental:
-  //composition = new CompositionStream(10000, false, 'addRandomOnsetLoop');
-  composition = new CompositionStream(10000, false, 'addRandomOnsetLoop', [null, 2]);
+  //composition = new CompositionStream(10000, false, new RandomOnset());
+  composition = new CompositionStream(10000, false, new RandomOnset(2, true));
   //palatable and fun:
   //composition = new CompositionStream(2000, true, 'addRandomOnsetSequence', [null, 1]);
 
@@ -81,7 +80,7 @@ function initStreamAndSockets() {
   io.on('connection', socket => {
     console.log('client connected', socket.handshake.headers.origin);
     composition.getTextureStream()
-      .subscribe(t => socket.emit('live-stream', t.jsonld));
+      .subscribe(async t => socket.emit('live-stream', await t.getJsonld()));
     socket.on('disconnect', socket => console.log('client disconnected', socket));
   });
 }
