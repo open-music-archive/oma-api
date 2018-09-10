@@ -8,7 +8,10 @@ export class CompositionStream {
   private textures: BehaviorSubject<Texture>;
   private totalGenerated = 0;
 
-  constructor() {
+  constructor(private updateInterval?: number,
+      private variations?: boolean,
+      private textureFunc = 'generateOneoffTexture',
+      private textureArgs: any[] = []) {
     this.textures = new BehaviorSubject<Texture>(null);
     this.updateTexture();
   }
@@ -20,15 +23,16 @@ export class CompositionStream {
   private async updateTexture() {
     const previousTexture = this.textures.getValue();
     let newTexture: Texture;
-    if (!previousTexture) {
-      newTexture = await this.generator.generateOneoffTexture()//this.generator.generateVariation();
-    } else {
+    if (previousTexture && this.variations) {
       newTexture = await this.generator.generateVariation(previousTexture.jsonld);
+    } else {
+      newTexture = await this.generator.generateOneoffTexture(this.textureFunc, this.textureArgs);
     }
     this.textures.next(newTexture);
     this.totalGenerated++;
     console.log("new texture, duration", newTexture.duration, "total", this.totalGenerated);
-    setTimeout(async () => this.updateTexture(), newTexture.duration*1000);
+    const time = this.updateInterval ? this.updateInterval : newTexture.duration*1000;
+    setTimeout(async () => this.updateTexture(), time);
   }
 
 }

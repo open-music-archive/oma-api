@@ -69,7 +69,11 @@ const server = app.listen(PORT, async () => {
 });
 
 function initStreamAndSockets() {
-  composition = new CompositionStream();
+  //nice and experimental:
+  //composition = new CompositionStream(10000, false, 'addRandomOnsetLoop');
+  composition = new CompositionStream(10000, false, 'addRandomOnsetLoop', [null, 2]);
+  //palatable and fun:
+  //composition = new CompositionStream(2000, true, 'addRandomOnsetSequence', [null, 1]);
 
   const io = socketIO.listen(server);
   //io.origins(['http://localhost:4200', 'http://evil.com']);

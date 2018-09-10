@@ -12,13 +12,13 @@ export class TextureGenerator {
 
   private dymoGen = new DymoGenerator();
 
-  async generateOneoffTexture(duration?: number): Promise<Texture> {
-    //return generateRandomOnsetLoop(objects);
-    //return generateRandomConcatLoop();
+  async generateOneoffTexture(func = 'addRandomOnsetLoop', args: any[] = [null, 1]): Promise<Texture> {
+    //const textureUri = await this.addRandomOnsetLoop(null, duration);
+    const textureUri = await this[func](...args);
     //return generateSimilarityLoop();
     //return generateVaryingLoop();
     //this.latestTexture = this.generateSequenceOfLoops();
-    const textureUri = await this.addRandomConcatSequence();
+    //const textureUri = await this.addRandomConcatSequence();
     //await this.addRandomOnsetSequence(await featureDb.getLongAndShortObjects(10,0), 5);
     return this.getTextureObject(textureUri);
   }
@@ -120,6 +120,7 @@ export class TextureGenerator {
       await this.dymoGen.setDymoParameter(dymo, uris.REVERB, reverb);
       const delay = _.random(2) ? 0 : Math.random();
       await this.dymoGen.setDymoParameter(dymo, uris.DELAY, delay);
+      //await this.dymoGen.setDymoParameter(dymo, uris.TIME_STRETCH_RATIO, Math.random());
     }
     return dymo;
   }
