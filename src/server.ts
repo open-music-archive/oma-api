@@ -40,7 +40,7 @@ app.get('/records', (req, res) => {
 });
 
 app.get('/texture', async (req, res) => {
-  res.send(await new RandomOnset(undefined, true));
+  res.send(await new RandomOnset({loop:true}));
 });
 
 app.get('/awesome', async (req, res) => {
@@ -70,7 +70,9 @@ const server = app.listen(PORT, async () => {
 function initStreamAndSockets() {
   //nice and experimental:
   //composition = new CompositionStream(10000, false, new RandomOnset());
-  composition = new CompositionStream(10000, false, new RandomOnset(2, true));
+  composition = new CompositionStream(10000, false, new RandomOnset({
+    duration:2, loop:true
+  }));
   //palatable and fun:
   //composition = new CompositionStream(2000, true, 'addRandomOnsetSequence', [null, 1]);
 

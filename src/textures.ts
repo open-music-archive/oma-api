@@ -4,18 +4,26 @@ import { DbSoundObject } from './db-types';
 import * as featureDb from './feature-db';
 import { mapSeries } from './util';
 
+export interface TextureOptions {
+  loop?: boolean,
+  repeat?: number,
+  duration?: number,
+  objects?: DbSoundObject[]
+}
+
 export abstract class Texture {
 
   protected dymoGen = new DymoGenerator();
   protected uri: Promise<string>;
   protected jsonld: Promise<string>;
 
-  constructor() {
+  constructor(protected options: TextureOptions) {
     this.regenerate();
   }
 
   async regenerate() {
     this.uri = this.generate();
+    await this.postGenerate();
     this.jsonld = this.dymoGen.getStore().uriToJsonld(await this.uri);
     return this;
   }
@@ -35,6 +43,15 @@ export abstract class Texture {
 
   /**returns the uri of whatever this texture consists of*/
   protected abstract generate(): Promise<string>;
+
+  private async postGenerate(): Promise<any> {
+    if (this.options.loop) {
+      await this.dymoGen.setDymoParameter(await this.uri, uris.LOOP, 1);
+    }
+    if (this.options.repeat) {
+      await this.dymoGen.setDymoParameter(await this.uri, uris.REPEAT, this.options.repeat);
+    }
+  }
 
   protected async addRandomOnsetDymo(parentUri: string, audioUri: string, maxOnset: number) {
     const dymo = await this.addRandomDymo(parentUri, audioUri, true, true);
@@ -65,7 +82,7 @@ export abstract class Texture {
 
 export class Variation extends Texture {
 
-  constructor(private modelJsonld: string) { super(); }
+  constructor(private modelJsonld: string) { super({}); }
 
   protected async generate(): Promise<string> {
     //load the model texture
@@ -102,8 +119,6 @@ export class SimilarityLoop extends Texture {
 
 export class RandomConcat extends Texture {
 
-  constructor(private loop?: boolean) { super(); }
-
   protected async generate(): Promise<string> {
     const sequence = await this.dymoGen.addDymo(null, null, uris.SEQUENCE);
     let objects = await featureDb.getLoudestSoundObjectsOfDuration(Math.random()/2+0.125, _.random(25)+1);
@@ -111,10 +126,6 @@ export class RandomConcat extends Texture {
     await this.dymoGen.setDymoParameter(sequence, uris.DURATION, totalDuration);
     const audioUris = objects.map(o => o.audioUri);
     await Promise.all(audioUris.map(a => this.addRandomDymo(sequence, a, true, true)));
-    //TODO LOOP COULD BE GENERALIZED FOR ANY TEXTURE....
-    if (this.loop) {
-      await this.dymoGen.setDymoParameter(sequence, uris.LOOP, 1);
-    }
     return sequence;
   }
 
@@ -122,26 +133,26 @@ export class RandomConcat extends Texture {
 
 export class RandomOnset extends Texture {
 
-  constructor(private duration?: number, private loop?: boolean, private objects?: DbSoundObject[]) { super(); }
-
   protected async generate(): Promise<string> {
     //TODO THIS KEEPS THE SAME OBJECTS WHEN REGENERATED. NICE!!!!!! (but should be optional)
-    this.objects = this.objects ? this.objects : await featureDb.getLongAndShortObjects(_.random(25)+1, _.random(25)+1);
-    const audioUris = this.objects.map(o => o.audioUri);
-    const sequence = await this.dymoGen.addDymo(null, null, uris.SEQUENCE);
-    const loopDuration = this.duration ? this.duration : 4*Math.random()+2;
-    await Promise.all(audioUris.map(a => this.addRandomOnsetDymo(sequence, a, loopDuration)));
-    //TODO LOOP COULD BE GENERALIZED FOR ANY TEXTURE....
-    if (this.loop) {
-      await this.dymoGen.setDymoParameter(sequence, uris.LOOP, 1);
+    if (!this.options.objects) {
+      this.options.objects = await featureDb.getLongAndShortObjects(_.random(25)+1, _.random(25)+1);
     }
+    if (!this.options.duration) {
+      this.options.duration = 4*Math.random()+2;
+    }
+    const audioUris = this.options.objects.map(o => o.audioUri);
+    const sequence = await this.dymoGen.addDymo(null, null, uris.SEQUENCE);
+    await Promise.all(audioUris.map(a => this.addRandomOnsetDymo(sequence, a, this.options.duration)));
     return sequence;
   }
 
 }
 
 export abstract class ComposedTexture extends Texture {
-  constructor(protected subTextures: Texture[]) {super();}
+  constructor(protected subTextures: Texture[], options: TextureOptions) {
+    super(options);
+  }
 }
 
 export abstract class TextureSequence extends ComposedTexture {
