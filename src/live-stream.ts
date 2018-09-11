@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs/Observable';
 import { BehaviorSubject } from 'rxjs/BehaviorSubject';
-import { Texture, Variation } from './textures';
+import { Texture, Variation } from './texture';
 
 export class CompositionStream {
 

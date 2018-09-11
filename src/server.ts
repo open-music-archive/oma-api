@@ -6,7 +6,8 @@ import * as featureDb from './feature-db';
 import { RecordSide, Clustering } from './types';
 import * as test from './test';
 import { CompositionStream } from './live-stream';
-import { RandomOnset, RandomConcat, SoundMaterial } from './textures';
+import * as textures from './textures';
+import * as streams from './streams';
 
 const PORT = process.env.PORT || 8060;
 
@@ -40,7 +41,7 @@ app.get('/records', (req, res) => {
 });
 
 app.get('/texture', async (req, res) => {
-  res.send(await new RandomOnset({loop:true}));
+  res.send(await textures.getSimilarityLoop());
 });
 
 app.get('/awesome', async (req, res) => {
@@ -69,14 +70,9 @@ const server = app.listen(PORT, async () => {
 
 function initStreamAndSockets() {
   //nice and experimental:
-  //composition = new CompositionStream(10000, false, new RandomOnset());
-  composition = new CompositionStream(10000, false, new RandomOnset({
-    duration:2, loop:true
-  }));
-  //palatable and fun:
-  //composition = new CompositionStream(2000, true, 'addRandomOnsetSequence', [null, 1]);
-  //previous similarity loop:
-  //new RandomConcat({materialType:SoundMaterial.Similars, repeat:3});
+  //composition = new CompositionStream(10000, false, textures.getSlowAndLow());
+  //composition = streams.getFun();
+  composition = new CompositionStream(10000, false, textures.getNiceAndExperimentalLoop());
 
   const io = socketIO.listen(server);
   //io.origins(['http://localhost:4200', 'http://evil.com']);
