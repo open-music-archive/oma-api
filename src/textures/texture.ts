@@ -1,8 +1,8 @@
 import * as _ from 'lodash';
-import { DymoGenerator, uris } from 'dymo-core';
-import { DbSoundObject } from './db-types';
-import * as featureDb from './feature-db';
-import { mapSeries } from './util';
+import { DymoGenerator, uris, forAll } from 'dymo-core';
+import { DbSoundObject } from '../db-types';
+import * as featureDb from '../feature-db';
+import { mapSeries } from '../util';
 
 export enum SoundMaterial {
   Random,
@@ -154,11 +154,46 @@ export class RandomOnset extends Texture {
     const sequence = await this.dymoGen.addDymo(null, null, uris.SEQUENCE);
     //only approximate...
     await this.dymoGen.setDymoParameter(sequence, uris.DURATION, this.options.duration);
-    await Promise.all(this.options.objects.map(o =>
-      this.addRandomOnsetDymo(sequence, o.audioUri, this.options.duration)));
+    await Promise.all(this.options.objects.map(async o =>
+      await this.addRandomOnsetDymo(sequence, o.audioUri, this.options.duration)));
     return sequence;
   }
 
+}
+
+export class Changing extends Texture {
+
+  protected async generate(): Promise<string> {
+    const music = await this.dymoGen.addDymo(null, null, uris.CONJUNCTION);
+    //await this.dymoGen.setDymoParameter(music, uris.LOOP, 1);
+    await Promise.all(this.options.objects.map(async o => {
+      const d = await this.dymoGen.addDymo(music, o.audioUri);
+      await this.dymoGen.setDymoParameter(d, uris.LOOP, 1);
+      //await this.dymoGen.setDymoParameter(d, uris.HEIGHT, 0.1);
+      //await this.addSlider(d, "Pan", n+"", "(c-0.5)*2");
+      /*await this.map(uris.BROWNIAN, d, "Amplitude", "c/4", 300);
+      await this.map(uris.BROWNIAN, d, "Pan", "(c-0.5)/2", 300);
+      await this.map(uris.RANDOM, d, "DurationRatio", "c+0.5", 800);*/
+      await this.map(uris.BROWNIAN, d, "PlaybackRate", "c+0.5", 500);
+      //await this.map(uris.RANDOM, d, "Reverb", "(c<0.2?0.1-(c-0.1):0)", 300); //"c/4", 300);
+    }));
+    /*const d = await this.dymoGen.addDymo(music, "assets/dymos/flo/808 Bass Lex.wav");
+    await this.dymoGen.setDymoParameter(d, uris.LOOP, 1);
+    await this.dymoGen.setDymoParameter(d, uris.DURATION_RATIO, Math.random()/5+0.1);
+    await this.dymoGen.setDymoParameter(d, uris.AMPLITUDE, 0.5);*/
+    return music;
+  }
+
+  private async map(controlType: string, dymo: string, param: string, formula: string = "c", freq?: number) {
+    await this.constrain(controlType, dymo, param, "=="+formula, freq);
+  }
+
+  private async constrain(controlType: string, dymo: string, param: string, formula: string, freq = 200, controlName?: string) {
+    const control = await this.dymoGen.addControl(controlName, controlType);
+    await this.dymoGen.getStore().setControlParam(control, uris.AUTO_CONTROL_FREQUENCY, freq);
+    await this.dymoGen.addConstraint(
+      forAll("d").in(dymo).forAll("c").in(control).assert(param+"(d)"+formula));
+  }
 }
 
 export abstract class CompositeTexture extends Texture {

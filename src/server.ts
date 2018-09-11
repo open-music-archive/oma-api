@@ -5,9 +5,10 @@ import * as store from './store';
 import * as featureDb from './feature-db';
 import { RecordSide, Clustering } from './types';
 import * as test from './test';
-import { CompositionStream } from './live-stream';
-import * as textures from './textures';
-import * as streams from './streams';
+import { CompositionStream } from './textures/live-stream';
+import { Changing } from './textures/texture';
+import * as textures from './textures/textures';
+import * as streams from './textures/streams';
 
 const PORT = process.env.PORT || 8060;
 
@@ -72,7 +73,8 @@ function initStreamAndSockets() {
   //nice and experimental:
   //composition = new CompositionStream(10000, false, textures.getSlowAndLow());
   //composition = streams.getFun();
-  composition = new CompositionStream(10000, false, textures.getNiceAndExperimentalLoop());
+  //composition = new CompositionStream(10000, false, textures.getNiceAndExperimentalLoop());
+  composition = new CompositionStream(10000, false, new Changing({loop: true}));
 
   const io = socketIO.listen(server);
   //io.origins(['http://localhost:4200', 'http://evil.com']);
