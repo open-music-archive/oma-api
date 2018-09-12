@@ -1,9 +1,11 @@
+import { ObjectID } from 'mongodb';
 import { SoundObject } from './types';
-import { DbSoundObjectFeatures } from './db-types';
+import { DbSoundObjectFeatures, DbRecording } from './db-types';
 
-export function toDbFeatures(soundObject: SoundObject): DbSoundObjectFeatures {
+export function toDbFeatures(soundObject: SoundObject, recId: ObjectID): DbSoundObjectFeatures {
   return {
     _id: undefined,
+    recordingID: recId,
     audioUri: soundObject.audioUri,
     duration: soundObject.duration,
     normalFeatures: soundObject.normalFeatures,

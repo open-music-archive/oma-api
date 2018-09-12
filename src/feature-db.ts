@@ -5,6 +5,7 @@ import { RecordSide, Clustering, Cluster } from './types';
 import { DbSoundObject, DbSoundObjectFeatures } from './db-types';
 import { toDbFeatures } from './util';
 
+const RECORDINGS = "recordings";
 const FEATURES = "soundObjectFeatures";
 const AWESOME_LOOPS = "awesomeLoops";
 const CLUSTERINGS = "clusterings";
@@ -15,7 +16,8 @@ let NUM_OBJECTS : number;
 
 export async function connect() {
   let client = await MongoClient.connect(URL, { useNewUrlParser: true });
-  db = client.db('openmusicarchive');
+  const dbname = URL.split("/").pop();
+  db = client.db(dbname);
   NUM_OBJECTS = await db.collection(FEATURES).countDocuments();
 }
 
@@ -23,9 +25,23 @@ export async function connect() {
 
 //posts the side to the feature db and updates the featureGuids
 export async function insertRecordSide(side: RecordSide) {
+  const recId = await insertRecording(side);
   const docIds = await Promise.all(side.soundObjects
-    .map(o => insertFeatures(toDbFeatures(o))));
+    .map(o => insertFeatures(toDbFeatures(o, recId))));
+  const updated = await updateRecording(recId, docIds);
+  console.log(recId, updated);
   side.soundObjects.forEach((o,i) => o.featureGuid = docIds[i].toHexString());
+}
+
+async function updateRecording(recId: ObjectID, objIds: ObjectID[]): Promise<number> {
+  var query = { _id: recId };
+  var update = { $set: { soundObjects: objIds } };
+  var result = await db.collection(RECORDINGS).updateOne(query, update);
+  return result.modifiedCount;
+}
+
+async function insertRecording(side: RecordSide): Promise<ObjectID> {
+  return (await db.collection(RECORDINGS).insertOne(side)).insertedId;
 }
 
 async function insertFeatures(features: DbSoundObjectFeatures): Promise<ObjectID> {

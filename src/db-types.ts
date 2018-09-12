@@ -3,6 +3,7 @@ import { FeatureSummary } from './types';
 
 export interface DbSoundObject {
   _id: ObjectID,
+  recordingID: ObjectID,
   duration: number,
   audioUri: string
 }
