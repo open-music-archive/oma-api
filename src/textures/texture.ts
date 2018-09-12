@@ -8,7 +8,8 @@ export enum SoundMaterial {
   Random,
   Similars,
   Loudest,
-  LongAndShort
+  LongAndShort,
+  Crackling
 }
 
 export interface Param {
@@ -76,6 +77,8 @@ export abstract class Texture {
         const duration = Math.random()/2+0.125;
         this.options.objects = await featureDb
           .getLoudestSoundObjectsOfDuration(duration, _.random(maxSize)+1);
+      } else if (this.options.soundMaterialType == SoundMaterial.Crackling) {
+        this.options.objects = await featureDb.getCracklingSoundObjects();
       } else {
         this.options.objects = await featureDb
           .getLongAndShortObjects(_.random(maxSize/2)+1, _.random(maxSize/2)+1);

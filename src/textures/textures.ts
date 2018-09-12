@@ -34,3 +34,11 @@ export function getSimilarityLoop() {
     repeat: 3, panning: true, effects: true
   });
 }
+
+export function getCracklingLoop() {
+  return new RandomConcat({
+    soundMaterialType: SoundMaterial.Crackling,
+    regenerateSoundMaterial: false,
+    loop: true, panning: true, effects: true
+  });
+}

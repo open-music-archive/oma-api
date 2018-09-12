@@ -22,6 +22,10 @@ app.use((req, res, next) => {
   next();
 });
 
+app.get('/', async (req, res) => {
+  res.send("this is the oma api");
+});
+
 app.post('/record', async (req, res) => {
   const side = <RecordSide>req.body;
   await featureDb.insertRecordSide(side);
@@ -73,7 +77,7 @@ function initStreamAndSockets() {
   //nice and experimental:
   //composition = new CompositionStream(10000, false, textures.getSlowAndLow());
   //composition = streams.getFun();
-  composition = new CompositionStream(10000, false, textures.getNiceAndExperimentalLoop());
+  composition = new CompositionStream(10000, false, textures.getCracklingLoop());
   //composition = new CompositionStream(10000, false, );
 
   const io = socketIO.listen(server);
