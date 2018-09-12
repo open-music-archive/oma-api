@@ -5,8 +5,10 @@ import * as store from './store';
 import * as featureDb from './feature-db';
 import { RecordSide, Clustering } from './types';
 import * as test from './test';
-import { CompositionStream } from './live-stream';
-import { RandomOnset, RandomConcat, SoundMaterial } from './textures';
+import { CompositionStream } from './textures/live-stream';
+import { Changing } from './textures/texture';
+import * as textures from './textures/textures';
+import * as streams from './textures/streams';
 
 const PORT = process.env.PORT || 8060;
 
@@ -18,6 +20,10 @@ app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "http://localhost:4200 https://open-music-archive.github.io http://evil.com/");
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
   next();
+});
+
+app.get('/', async (req, res) => {
+  res.send("this is the oma api");
 });
 
 app.post('/record', async (req, res) => {
@@ -40,7 +46,7 @@ app.get('/records', (req, res) => {
 });
 
 app.get('/texture', async (req, res) => {
-  res.send(await new RandomOnset({loop:true}));
+  res.send(await textures.getSimilarityLoop());
 });
 
 app.get('/awesome', async (req, res) => {
@@ -69,22 +75,19 @@ const server = app.listen(PORT, async () => {
 
 function initStreamAndSockets() {
   //nice and experimental:
-  //composition = new CompositionStream(10000, false, new RandomOnset());
-  composition = new CompositionStream(10000, false, new RandomOnset({
-    duration:2, loop:true
-  }));
-  //palatable and fun:
-  //composition = new CompositionStream(2000, true, 'addRandomOnsetSequence', [null, 1]);
-  //previous similarity loop:
-  //new RandomConcat({materialType:SoundMaterial.Similars, repeat:3});
+  //composition = new CompositionStream(10000, false, textures.getSlowAndLow());
+  //composition = streams.getFun();
+  composition = new CompositionStream(10000, false, textures.getCracklingLoop());
+  //composition = new CompositionStream(10000, false, );
 
   const io = socketIO.listen(server);
   //io.origins(['http://localhost:4200', 'http://evil.com']);
 
   io.on('connection', socket => {
-    console.log('client connected', socket.handshake.headers.origin);
+    console.log('client connected, now', (<any>io.engine).clientsCount);
     composition.getTextureStream()
       .subscribe(async t => socket.emit('live-stream', await t.getJsonld()));
-    socket.on('disconnect', socket => console.log('client disconnected', socket));
+    socket.on('disconnect', () =>
+      console.log('client disconnected, now', (<any>io.engine).clientsCount));
   });
 }

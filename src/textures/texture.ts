@@ -1,14 +1,20 @@
 import * as _ from 'lodash';
-import { DymoGenerator, uris } from 'dymo-core';
-import { DbSoundObject } from './db-types';
-import * as featureDb from './feature-db';
-import { mapSeries } from './util';
+import { DymoGenerator, uris, forAll } from 'dymo-core';
+import { DbSoundObject } from '../db-types';
+import * as featureDb from '../feature-db';
+import { mapSeries } from '../util';
 
 export enum SoundMaterial {
   Random,
   Similars,
   Loudest,
-  LongAndShort
+  LongAndShort,
+  Crackling
+}
+
+export interface Param {
+  type: string,
+  range?: [number, number]
 }
 
 export interface TextureOptions {
@@ -16,11 +22,12 @@ export interface TextureOptions {
   repeat?: number,
   duration?: number,
   objects?: DbSoundObject[],
-  materialType?: SoundMaterial,
-  maxMaterialSize?: number,
+  soundMaterialType?: SoundMaterial,
+  maxSoundMaterialSize?: number,
   regenerateSoundMaterial?: boolean,
   panning?: boolean,
-  effects?: boolean
+  effects?: boolean,
+  params?: Param[]
 }
 
 export abstract class Texture {
@@ -59,17 +66,19 @@ export abstract class Texture {
 
   private async initSoundMaterial(): Promise<void> {
     if (!this.options.objects || this.options.regenerateSoundMaterial) {
-      const maxSize = this.options.maxMaterialSize || 25;
-      if (this.options.materialType == SoundMaterial.Similars) {
+      const maxSize = this.options.maxSoundMaterialSize || 25;
+      if (this.options.soundMaterialType == SoundMaterial.Similars) {
         const randomObject = (await featureDb.getRandomSoundObjects(1))[0];
         this.options.objects = await featureDb.getSimilarSoundObjects(randomObject);
-      } else if (this.options.materialType == SoundMaterial.Random) {
+      } else if (this.options.soundMaterialType == SoundMaterial.Random) {
         this.options.objects = await featureDb
           .getRandomSoundObjects(_.random(maxSize)+1);
-      } else if (this.options.materialType == SoundMaterial.Loudest) {
+      } else if (this.options.soundMaterialType == SoundMaterial.Loudest) {
         const duration = Math.random()/2+0.125;
         this.options.objects = await featureDb
           .getLoudestSoundObjectsOfDuration(duration, _.random(maxSize)+1);
+      } else if (this.options.soundMaterialType == SoundMaterial.Crackling) {
+        this.options.objects = await featureDb.getCracklingSoundObjects();
       } else {
         this.options.objects = await featureDb
           .getLongAndShortObjects(_.random(maxSize/2)+1, _.random(maxSize/2)+1);
@@ -95,29 +104,36 @@ export abstract class Texture {
 
   protected async addRandomDymo(parentUri: string, audioUri: string) {
     const dymo = await this.dymoGen.addDymo(parentUri, audioUri);
+    if (this.options.params) {
+      await mapSeries(this.options.params, p => this.setRandomParam(dymo, p.type, p.range));
+    }
     if (this.options.panning) {
-      await this.dymoGen.setDymoParameter(dymo, uris.AMPLITUDE, Math.random());
-      await this.dymoGen.setDymoParameter(dymo, uris.PAN, Math.random()-0.5);
-      await this.dymoGen.setDymoParameter(dymo, uris.DISTANCE, Math.random()-0.5);
-      await this.dymoGen.setDymoParameter(dymo, uris.HEIGHT, Math.random()-0.5);
+      await this.setRandomParam(dymo, uris.AMPLITUDE);
+      await this.setRandomParam(dymo, uris.PAN, [-0.5, 0.5]);
+      await this.setRandomParam(dymo, uris.DISTANCE, [-0.5, 0.5]);
+      await this.setRandomParam(dymo, uris.HEIGHT, [-0.5, 0.5]);
     }
     if (this.options.effects) {
-      const reverb = _.random(2) ? 0 : 0.3*Math.random();
-      await this.dymoGen.setDymoParameter(dymo, uris.REVERB, reverb);
-      const delay = _.random(2) ? 0 : Math.random();
-      await this.dymoGen.setDymoParameter(dymo, uris.DELAY, delay);
-      //await this.dymoGen.setDymoParameter(dymo, uris.TIME_STRETCH_RATIO, Math.random());
+      await this.setRandomParam(dymo, uris.REVERB, [0, 0.3], 0.5);
+      await this.setRandomParam(dymo, uris.DELAY, [0, 0.3], 0.3);
     }
     return dymo;
+  }
+
+  protected async setRandomParam(dymoUri: string, paramUri: string,
+      range: [number,number] = [0,1], probability = 1) {
+    const p = Math.random() < probability;
+    const value = p ? Math.random()*(range[1]-range[0])+range[0] : 0;
+    return this.dymoGen.setDymoParameter(dymoUri, paramUri, value);
   }
 
 }
 
 //PREVIOUS SimilarityLoop:
-//new RandomConcat({materialType:SoundMaterial.Similars, repeat:3});
+//new RandomConcat({soundMaterialType:SoundMaterial.Similars, repeat:3});
 
 //PREVIOUS RandomConcat:
-//new RandomConcat({materialType:SoundMaterial.Loudest});
+//new RandomConcat({soundMaterialType:SoundMaterial.Loudest});
 
 export class RandomConcat extends Texture {
 
@@ -141,11 +157,46 @@ export class RandomOnset extends Texture {
     const sequence = await this.dymoGen.addDymo(null, null, uris.SEQUENCE);
     //only approximate...
     await this.dymoGen.setDymoParameter(sequence, uris.DURATION, this.options.duration);
-    await Promise.all(this.options.objects.map(o =>
-      this.addRandomOnsetDymo(sequence, o.audioUri, this.options.duration)));
+    await Promise.all(this.options.objects.map(async o =>
+      await this.addRandomOnsetDymo(sequence, o.audioUri, this.options.duration)));
     return sequence;
   }
 
+}
+
+export class Changing extends Texture {
+
+  protected async generate(): Promise<string> {
+    const music = await this.dymoGen.addDymo(null, null, uris.CONJUNCTION);
+    //await this.dymoGen.setDymoParameter(music, uris.LOOP, 1);
+    await Promise.all(this.options.objects.map(async o => {
+      const d = await this.dymoGen.addDymo(music, o.audioUri);
+      await this.dymoGen.setDymoParameter(d, uris.LOOP, 1);
+      //await this.dymoGen.setDymoParameter(d, uris.HEIGHT, 0.1);
+      //await this.addSlider(d, "Pan", n+"", "(c-0.5)*2");
+      await this.map(music, uris.BROWNIAN, d, "Amplitude", "c/4", 300);
+      await this.map(music, uris.BROWNIAN, d, "Pan", "(c-0.5)/2", 300);
+      await this.map(music, uris.RANDOM, d, "DurationRatio", "c+0.5", 800);
+      await this.map(music, uris.BROWNIAN, d, "PlaybackRate", "c+0.5", 500);
+      //await this.map(uris.RANDOM, d, "Reverb", "(c<0.2?0.1-(c-0.1):0)", 300); //"c/4", 300);
+    }));
+    /*const d = await this.dymoGen.addDymo(music, "assets/dymos/flo/808 Bass Lex.wav");
+    await this.dymoGen.setDymoParameter(d, uris.LOOP, 1);
+    await this.dymoGen.setDymoParameter(d, uris.DURATION_RATIO, Math.random()/5+0.1);
+    await this.dymoGen.setDymoParameter(d, uris.AMPLITUDE, 0.5);*/
+    return music;
+  }
+
+  private async map(owner: string, controlType: string, dymo: string, param: string, formula: string = "c", freq?: number) {
+    await this.constrain(owner, controlType, dymo, param, "=="+formula, freq);
+  }
+
+  private async constrain(owner: string, controlType: string, dymo: string, param: string, formula: string, freq = 200, controlName?: string) {
+    const control = await this.dymoGen.addControl(controlName, controlType);
+    await this.dymoGen.getStore().setControlParam(control, uris.AUTO_CONTROL_FREQUENCY, freq);
+    await this.dymoGen.getStore().addConstraint(owner,
+      forAll("d").in(dymo).forAll("c").in(control).assert(param+"(d)"+formula));
+  }
 }
 
 export abstract class CompositeTexture extends Texture {

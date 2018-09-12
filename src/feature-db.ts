@@ -127,6 +127,13 @@ export async function getShortestSoundObjects(count: number): Promise<DbSoundObj
   return aggregateSoundObjects(getMin("duration", count));
 }
 
+export async function getCracklingSoundObjects(): Promise<DbSoundObject[]> {
+  const crackle = await findSoundObjects({"audioUri": {
+    "$regex": "0b8dc245-93ba-4a84-a6bd-5ba2cf00dfb7.wav"
+  }});
+  return getSimilarSoundObjects(crackle[0]);
+}
+
 function getMaxFeature(featureIndex: number, count: number): Object[] {
   return addFeatureMean(featureIndex).concat(getMax("mean", count));
 }
