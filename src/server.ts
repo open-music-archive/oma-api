@@ -73,16 +73,17 @@ function initStreamAndSockets() {
   //nice and experimental:
   //composition = new CompositionStream(10000, false, textures.getSlowAndLow());
   //composition = streams.getFun();
-  //composition = new CompositionStream(10000, false, textures.getNiceAndExperimentalLoop());
-  composition = new CompositionStream(10000, false, new Changing({loop: true}));
+  composition = new CompositionStream(10000, false, textures.getNiceAndExperimentalLoop());
+  //composition = new CompositionStream(10000, false, );
 
   const io = socketIO.listen(server);
   //io.origins(['http://localhost:4200', 'http://evil.com']);
 
   io.on('connection', socket => {
-    console.log('client connected', socket.handshake.headers.origin);
+    console.log('client connected, now', (<any>io.engine).clientsCount);
     composition.getTextureStream()
       .subscribe(async t => socket.emit('live-stream', await t.getJsonld()));
-    socket.on('disconnect', socket => console.log('client disconnected', socket));
+    socket.on('disconnect', () =>
+      console.log('client disconnected, now', (<any>io.engine).clientsCount));
   });
 }

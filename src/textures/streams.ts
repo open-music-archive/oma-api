@@ -1,6 +1,6 @@
 import { CompositionStream } from './live-stream';
-import { getShortAndExperimentalLoop } from './textures';
+import * as textures from './textures';
 
 export function getFun() {
-  return new CompositionStream(2000, true, getShortAndExperimentalLoop());
+  return new CompositionStream(2000, true, textures.getShortAndExperimentalLoop());
 }

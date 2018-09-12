@@ -171,10 +171,10 @@ export class Changing extends Texture {
       await this.dymoGen.setDymoParameter(d, uris.LOOP, 1);
       //await this.dymoGen.setDymoParameter(d, uris.HEIGHT, 0.1);
       //await this.addSlider(d, "Pan", n+"", "(c-0.5)*2");
-      /*await this.map(uris.BROWNIAN, d, "Amplitude", "c/4", 300);
-      await this.map(uris.BROWNIAN, d, "Pan", "(c-0.5)/2", 300);
-      await this.map(uris.RANDOM, d, "DurationRatio", "c+0.5", 800);*/
-      await this.map(uris.BROWNIAN, d, "PlaybackRate", "c+0.5", 500);
+      await this.map(music, uris.BROWNIAN, d, "Amplitude", "c/4", 300);
+      await this.map(music, uris.BROWNIAN, d, "Pan", "(c-0.5)/2", 300);
+      await this.map(music, uris.RANDOM, d, "DurationRatio", "c+0.5", 800);
+      await this.map(music, uris.BROWNIAN, d, "PlaybackRate", "c+0.5", 500);
       //await this.map(uris.RANDOM, d, "Reverb", "(c<0.2?0.1-(c-0.1):0)", 300); //"c/4", 300);
     }));
     /*const d = await this.dymoGen.addDymo(music, "assets/dymos/flo/808 Bass Lex.wav");
@@ -184,14 +184,14 @@ export class Changing extends Texture {
     return music;
   }
 
-  private async map(controlType: string, dymo: string, param: string, formula: string = "c", freq?: number) {
-    await this.constrain(controlType, dymo, param, "=="+formula, freq);
+  private async map(owner: string, controlType: string, dymo: string, param: string, formula: string = "c", freq?: number) {
+    await this.constrain(owner, controlType, dymo, param, "=="+formula, freq);
   }
 
-  private async constrain(controlType: string, dymo: string, param: string, formula: string, freq = 200, controlName?: string) {
+  private async constrain(owner: string, controlType: string, dymo: string, param: string, formula: string, freq = 200, controlName?: string) {
     const control = await this.dymoGen.addControl(controlName, controlType);
     await this.dymoGen.getStore().setControlParam(control, uris.AUTO_CONTROL_FREQUENCY, freq);
-    await this.dymoGen.addConstraint(
+    await this.dymoGen.getStore().addConstraint(owner,
       forAll("d").in(dymo).forAll("c").in(control).assert(param+"(d)"+formula));
   }
 }
