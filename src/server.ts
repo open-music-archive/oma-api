@@ -63,7 +63,7 @@ app.get('/features', async (req, res) => {
 const server = app.listen(PORT, async () => {
   await featureDb.connect();
   console.log('open music archive server started at http://localhost:' + PORT);
-  // await initStreamAndSockets();
+  await initStreamAndSockets();
   //console.log((await featureDb.getSoundObjectsNewerThan(new Date(Date.now()-(4.1*60*60*1000)))).length);
 
   //addTestRecordSide();
@@ -80,7 +80,7 @@ const server = app.listen(PORT, async () => {
 
 async function initStreamAndSockets() {
   //nice and experimental:
-  composition = new CompositionStream(2000, false, textures.getNiceAndExperimentalLoop());
+  composition = new CompositionStream(10000, false, textures.getNiceAndExperimentalLoop());
   //composition = streams.getFun();
   //composition = new CompositionStream(10000, false, textures.getCracklingLoop());
   //composition = new CompositionStream(10000, false, );
