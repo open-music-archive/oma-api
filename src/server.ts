@@ -17,7 +17,7 @@ let composition: CompositionStream;
 const app = express();
 app.use(bodyParser.json({limit: '50mb'}));
 app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "http://localhost:4200 https://open-music-archive.github.io http://evil.com/");
+  res.header("Access-Control-Allow-Origin", "*");//"http://localhost:4200 https://open-music-archive.github.io http://evil.com/");
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
   next();
 });
@@ -60,7 +60,9 @@ app.get('/features', async (req, res) => {
 const server = app.listen(PORT, async () => {
   await featureDb.connect();
   console.log('open music archive server started at http://localhost:' + PORT);
-  initStreamAndSockets();
+  await initStreamAndSockets();
+  //console.log((await featureDb.getSoundObjectsNewerThan(new Date(Date.now()-(4.1*60*60*1000)))).length);
+
   //addTestRecordSide();
   //let obj = (await featureDb.getLoudestSoundObjects(1))[0];
   //console.log(JSON.stringify(await featureDb.getSimilarSoundObjects(obj)));
@@ -73,18 +75,21 @@ const server = app.listen(PORT, async () => {
 
 });
 
-function initStreamAndSockets() {
+async function initStreamAndSockets() {
   //nice and experimental:
   //composition = new CompositionStream(10000, false, textures.getSlowAndLow());
   //composition = streams.getFun();
   composition = new CompositionStream(10000, false, textures.getCracklingLoop());
   //composition = new CompositionStream(10000, false, );
+  //const loop = textures.getSimilarityLoop();
+  //console.log(await loop.getUri())
 
   const io = socketIO.listen(server);
-  //io.origins(['http://localhost:4200', 'http://evil.com']);
+  //io.origins(['http://localhost:4200', 'https://open-music-archive.github.io/', 'https://www.playitagainuseittogether.com']);
 
-  io.on('connection', socket => {
+  io.on('connection', async socket => {
     console.log('client connected, now', (<any>io.engine).clientsCount);
+    //socket.emit('live-stream', "TEXT")
     composition.getTextureStream()
       .subscribe(async t => socket.emit('live-stream', await t.getJsonld()));
     socket.on('disconnect', () =>

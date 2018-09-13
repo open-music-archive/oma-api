@@ -24,6 +24,7 @@ export interface TextureOptions {
   objects?: DbSoundObject[],
   soundMaterialType?: SoundMaterial,
   maxSoundMaterialSize?: number,
+  prioritizeRecent?: boolean,
   regenerateSoundMaterial?: boolean,
   panning?: boolean,
   effects?: boolean,
@@ -46,6 +47,11 @@ export abstract class Texture {
     await this.postGenerate();
     this.jsonld = this.dymoGen.getStore().uriToJsonld(await this.uri);
     return this;
+    /*this.uri = this.initSoundMaterial().then(this.generate);
+    this.jsonld = this.uri.then(() =>
+      this.postGenerate().then(async () =>
+        this.dymoGen.getStore().uriToJsonld(await this.uri)));
+    return this;*/
   }
 
   async getUri(): Promise<string> {
@@ -65,24 +71,44 @@ export abstract class Texture {
   protected abstract generate(): Promise<string>;
 
   private async initSoundMaterial(): Promise<void> {
+    const MAX_TRIES = 4;
     if (!this.options.objects || this.options.regenerateSoundMaterial) {
-      const maxSize = this.options.maxSoundMaterialSize || 25;
-      if (this.options.soundMaterialType == SoundMaterial.Similars) {
-        const randomObject = (await featureDb.getRandomSoundObjects(1))[0];
-        this.options.objects = await featureDb.getSimilarSoundObjects(randomObject);
-      } else if (this.options.soundMaterialType == SoundMaterial.Random) {
-        this.options.objects = await featureDb
-          .getRandomSoundObjects(_.random(maxSize)+1);
-      } else if (this.options.soundMaterialType == SoundMaterial.Loudest) {
-        const duration = Math.random()/2+0.125;
-        this.options.objects = await featureDb
-          .getLoudestSoundObjectsOfDuration(duration, _.random(maxSize)+1);
-      } else if (this.options.soundMaterialType == SoundMaterial.Crackling) {
-        this.options.objects = await featureDb.getCracklingSoundObjects();
-      } else {
-        this.options.objects = await featureDb
-          .getLongAndShortObjects(_.random(maxSize/2)+1, _.random(maxSize/2)+1);
+      const size = _.random(this.options.maxSoundMaterialSize || 25) + 1;
+      let material = [];
+      let tries = 0;
+      while (material.length < size && tries < MAX_TRIES) {
+        const fromDate = this.options.prioritizeRecent ? this.getDate(tries) : undefined;
+        material = material.concat(this.getSoundMaterial(size, fromDate));
+        tries++;
       }
+    }
+  }
+
+  private getDate(recency: number) {
+    let decrement: number;
+    if (recency == 0) { decrement = 60*60*1000 } //one hour
+    else if (recency == 1) { decrement = 24*60*60*1000 } //one day
+    else if (recency == 2) { decrement = 7*24*60*60*1000 } //one week
+    else if (recency == 3) { decrement = 30*7*24*60*60*1000 } //one month
+    return new Date(Date.now() - decrement);
+  }
+
+  private async getSoundMaterial(size: number, fromDate?: Date) {
+    if (this.options.soundMaterialType == SoundMaterial.Similars) {
+      const randomObject = (await featureDb.getRandomSoundObjects(1, fromDate))[0];
+      this.options.objects = await featureDb.getSimilarSoundObjects(randomObject, fromDate);
+    } else if (this.options.soundMaterialType == SoundMaterial.Random) {
+      this.options.objects = await featureDb
+        .getRandomSoundObjects(size, fromDate);
+    } else if (this.options.soundMaterialType == SoundMaterial.Loudest) {
+      const duration = Math.random()/2+0.125;
+      this.options.objects = await featureDb
+        .getLoudestSoundObjectsOfDuration(duration, size, fromDate);
+    } else if (this.options.soundMaterialType == SoundMaterial.Crackling) {
+      this.options.objects = await featureDb.getCracklingSoundObjects(fromDate);
+    } else {
+      this.options.objects = await featureDb
+        .getLongAndShortObjects(size/2, size/2, fromDate);
     }
   }
 
