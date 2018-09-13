@@ -1,4 +1,0 @@
-
-function classify() {
-  return { }
-}

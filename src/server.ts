@@ -3,9 +3,7 @@ import * as bodyParser from 'body-parser';
 import * as socketIO from 'socket.io';
 import * as store from './store';
 import * as featureDb from './feature-db';
-import * as clusterer from './clusterer';
-import { RecordSide } from './types';
-import { DbClustering } from './db-types';
+import { RecordSide, Clustering } from './types';
 import * as test from './test';
 import { CompositionStream } from './textures/live-stream';
 import { Changing } from './textures/texture';
@@ -36,12 +34,11 @@ app.post('/record', async (req, res) => {
 });
 
 app.post('/clustering', async (req, res) => {
-  featureDb.insertClustering(<DbClustering>req.body);
-  res.send();
-});
-
-app.post('/classify', async (req, res) => {
-  res.send(clusterer.classify(req.body));
+  const clustering = <Clustering>req.body;
+  //TODO THOMAS
+  //res.send(await store.addClustering(clustering));
+  //for now, add to feature db
+  featureDb.insertClustering(clustering);
 });
 
 app.get('/records', (req, res) => {
@@ -63,7 +60,7 @@ app.get('/features', async (req, res) => {
 const server = app.listen(PORT, async () => {
   await featureDb.connect();
   console.log('open music archive server started at http://localhost:' + PORT);
-  // await initStreamAndSockets();
+  await initStreamAndSockets();
   //console.log((await featureDb.getSoundObjectsNewerThan(new Date(Date.now()-(4.1*60*60*1000)))).length);
 
   //addTestRecordSide();
