@@ -29,9 +29,8 @@ export class CompositionStream {
     this.textures.next(newTexture);
     this.totalGenerated++;
     const duration = await newTexture.getDuration();
-    console.log("new texture, duration", duration, "total", this.totalGenerated);
+    console.log("new texture, duration", duration, "total", this.totalGenerated, new Date(Date.now()));
     const interval = this.updateInterval ? this.updateInterval : duration*1000;
-    console.log(new Date(Date.now()))
     setTimeout(async () => this.updateTexture(), interval);
   }
 

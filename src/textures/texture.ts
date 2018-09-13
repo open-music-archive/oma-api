@@ -43,7 +43,6 @@ export abstract class Texture {
 
   async regenerate() {
     await this.initSoundMaterial();
-    console.log("DONE")
     this.uri = this.generate();
     await this.postGenerate();
     this.jsonld = this.dymoGen.getStore().uriToJsonld(await this.uri);
@@ -78,11 +77,9 @@ export abstract class Texture {
       let material: DbSoundObject[] = [];
       await mapSeries(_.range(MAX_TRIES), async t => {
         if (material.length < size && t < MAX_TRIES) {
-          console.log("LOOP", size, t, material.length, material.length < size, t < MAX_TRIES);
           const fromDate = this.options.prioritizeRecent ? this.getDate(t) : undefined;
           const part = this.options.prioritizeRecent && (t < MAX_TRIES-1) ?
-            _.round((size-material.length)/2) : size;
-          console.log(fromDate, part)
+            _.floor((size-material.length)/2) : size-material.length;
           const newMaterial = await this.getSoundMaterial(part, fromDate);
           material = material.concat(newMaterial);
         }
