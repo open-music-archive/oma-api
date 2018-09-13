@@ -3,7 +3,7 @@ import * as _ from 'lodash';
 import { URL } from './config';
 import { RecordSide } from './types';
 import { DbSoundObject, DbSoundObjectFeatures, DbClustering, Cluster } from './db-types';
-import { toDbFeatures } from './util';
+import { toDbFeatures, objectIdWithTimestamp } from './util';
 
 const RECORDINGS = "recordings";
 const FEATURES = "soundObjectFeatures";
