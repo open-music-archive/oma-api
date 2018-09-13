@@ -32,11 +32,7 @@ export interface FeatureSummary {
 export interface Clustering {
   features: string[],
   method: string,
-  clusters: Cluster[]
-}
-
-export interface Cluster {
-  name: string,
-  signals: string[],
-  centroid: string
+  ratio: number,
+  size: number,
+  centroids: number[][]
 }
