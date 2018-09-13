@@ -46,6 +46,7 @@ export abstract class Texture {
     this.uri = this.generate();
     await this.postGenerate();
     this.jsonld = this.dymoGen.getStore().uriToJsonld(await this.uri);
+    this.dymoGen = new DymoGenerator();
     return this;
     /*this.uri = this.initSoundMaterial().then(this.generate);
     this.jsonld = this.uri.then(() =>
@@ -71,7 +72,7 @@ export abstract class Texture {
   protected abstract generate(): Promise<string>;
 
   private async initSoundMaterial(): Promise<void> {
-    const MAX_TRIES = 4;
+    const MAX_TRIES = 5;
     if (!this.options.objects || this.options.regenerateSoundMaterial) {
       const size = _.random(this.options.maxSoundMaterialSize || 25) + 1;
       let material: DbSoundObject[] = [];
@@ -90,10 +91,11 @@ export abstract class Texture {
 
   private getDate(recency: number) {
     let decrement: number;
-    if (recency == 0) { decrement = 60*60*1000 } //one hour
-    else if (recency == 1) { decrement = 24*60*60*1000 } //one day
-    else if (recency == 2) { decrement = 7*24*60*60*1000 } //one week
-    else if (recency == 3) { decrement = 30*7*24*60*60*1000 } //one month
+    if (recency == 0) { decrement = 10*60*1000 } //ten minutes
+    else if (recency == 1) { decrement = 60*60*1000 } //one hour
+    else if (recency == 2) { decrement = 24*60*60*1000 } //one day
+    else if (recency == 3) { decrement = 7*24*60*60*1000 } //one week
+    else if (recency == 4) { decrement = 30*7*24*60*60*1000 } //one month
     return new Date(Date.now() - decrement);
   }
 
