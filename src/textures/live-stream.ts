@@ -6,6 +6,7 @@ export class CompositionStream {
 
   private textures: BehaviorSubject<Texture>;
   private totalGenerated = 0;
+  private previousTime: number;
 
   constructor(private updateInterval?: number,
       private variations?: boolean,
@@ -29,10 +30,18 @@ export class CompositionStream {
     this.textures.next(newTexture);
     this.totalGenerated++;
     const duration = await newTexture.getDuration();
-    console.log("new texture, duration", duration, "total", this.totalGenerated);
+    const time = Date.now();
+    const timeDiff = this.previousTime ? time-this.previousTime : 0;
+    console.log("new texture, duration "+ duration+ ", total generated "+ this.totalGenerated
+      + ", time taken " + Math.round(timeDiff/1000) + ", " + this.getMemoryUsage());
     const interval = this.updateInterval ? this.updateInterval : duration*1000;
-    console.log(new Date(Date.now()))
+    this.previousTime = time;
     setTimeout(async () => this.updateTexture(), interval);
+  }
+
+  private getMemoryUsage() {
+    const used = process.memoryUsage().heapUsed / 1024 / 1024;
+    return "memory " + (Math.round(used * 100) / 100) + "MB";
   }
 
 }

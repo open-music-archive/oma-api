@@ -98,9 +98,13 @@ export async function getSimilarSoundObjects(object: DbSoundObject): Promise<DbS
     { $unwind: "$clusters" },
     { $replaceRoot: { newRoot: "$clusters" } },
     { $project: { signals: 1 } }
-  ]).toArray())[1]; //switch clustering here!
-  const ids = cluster.signals.map(s => new ObjectID(s));
-  return findSoundObjects({ _id: { $in: ids } });
+  ], fromDate);
+  const cluster: Cluster = (await db.collection(CLUSTERINGS).aggregate(aggregate).toArray())[1]; //switch clustering here!
+  if (cluster) {
+    const ids = cluster.signals.map(s => new ObjectID(s));
+    return findSoundObjects({ _id: { $in: ids } });
+  }
+  return [];
 }
 
 export async function getLongAndShortObjects(long: number, short: number): Promise<DbSoundObject[]> {

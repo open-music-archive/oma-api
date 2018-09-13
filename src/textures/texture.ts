@@ -74,15 +74,17 @@ export abstract class Texture {
     const MAX_TRIES = 4;
     if (!this.options.objects || this.options.regenerateSoundMaterial) {
       const size = _.random(this.options.maxSoundMaterialSize || 25) + 1;
-      let material = [];
-      let tries = 0;
-      while (material.length < size && tries < MAX_TRIES) {
-        const fromDate = this.options.prioritizeRecent ? this.getDate(tries) : undefined;
-        const part = this.options.prioritizeRecent && (tries < MAX_TRIES-1) ?
-          (size-material.length)/2 : size;
-        material = material.concat(this.getSoundMaterial(part, fromDate));
-        tries++;
-      }
+      let material: DbSoundObject[] = [];
+      await mapSeries(_.range(MAX_TRIES), async t => {
+        if (material.length < size && t < MAX_TRIES) {
+          const fromDate = this.options.prioritizeRecent ? this.getDate(t) : undefined;
+          const part = this.options.prioritizeRecent && (t < MAX_TRIES-1) ?
+            _.floor((size-material.length)/2) : size-material.length;
+          const newMaterial = await this.getSoundMaterial(part, fromDate);
+          material = material.concat(newMaterial);
+        }
+      });
+      this.options.objects = material;
     }
   }
 
@@ -95,22 +97,21 @@ export abstract class Texture {
     return new Date(Date.now() - decrement);
   }
 
-  private async getSoundMaterial(size: number, fromDate?: Date) {
+  private async getSoundMaterial(size: number, fromDate?: Date): Promise<DbSoundObject[]> {
     if (this.options.soundMaterialType == SoundMaterial.Similars) {
       const randomObject = (await featureDb.getRandomSoundObjects(1, fromDate))[0];
-      this.options.objects = await featureDb.getSimilarSoundObjects(randomObject, fromDate);
+      return featureDb.getSimilarSoundObjects(randomObject, fromDate);
     } else if (this.options.soundMaterialType == SoundMaterial.Random) {
-      this.options.objects = await featureDb
-        .getRandomSoundObjects(size, fromDate);
+      return featureDb.getRandomSoundObjects(size, fromDate);
     } else if (this.options.soundMaterialType == SoundMaterial.Loudest) {
       const duration = Math.random()/2+0.125;
-      this.options.objects = await featureDb
-        .getLoudestSoundObjectsOfDuration(duration, size, fromDate);
+      return featureDb.getLoudestSoundObjectsOfDuration(duration, size, fromDate);
     } else if (this.options.soundMaterialType == SoundMaterial.Crackling) {
-      this.options.objects = await featureDb.getCracklingSoundObjects(fromDate);
+      const crackles = await featureDb.getCracklingSoundObjects(fromDate);
+      return _.sampleSize(crackles, size);
     } else {
-      this.options.objects = await featureDb
-        .getLongAndShortObjects(size/2, size/2, fromDate);
+      const half = _.round(size/2);
+      return featureDb.getLongAndShortObjects(half, half, fromDate);
     }
   }
 
