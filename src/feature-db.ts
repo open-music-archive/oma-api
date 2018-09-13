@@ -104,8 +104,11 @@ export async function getSimilarSoundObjects(object: DbSoundObject, fromDate?: D
     { $project: { signals: 1 } }
   ], fromDate);
   const cluster: Cluster = (await db.collection(CLUSTERINGS).aggregate(aggregate).toArray())[1]; //switch clustering here!
-  const ids = cluster.signals.map(s => new ObjectID(s));
-  return findSoundObjects({ _id: { $in: ids } });
+  if (cluster) {
+    const ids = cluster.signals.map(s => new ObjectID(s));
+    return findSoundObjects({ _id: { $in: ids } });
+  }
+  return [];
 }
 
 export async function getLongAndShortObjects(long: number, short: number, fromDate?: Date): Promise<DbSoundObject[]> {

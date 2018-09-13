@@ -77,9 +77,9 @@ const server = app.listen(PORT, async () => {
 
 async function initStreamAndSockets() {
   //nice and experimental:
-  //composition = new CompositionStream(10000, false, textures.getSlowAndLow());
+  composition = new CompositionStream(10000, false, textures.getNiceAndExperimentalLoop());
   //composition = streams.getFun();
-  composition = new CompositionStream(10000, false, textures.getCracklingLoop());
+  //composition = new CompositionStream(10000, false, textures.getCracklingLoop());
   //composition = new CompositionStream(10000, false, );
   //const loop = textures.getSimilarityLoop();
   //console.log(await loop.getUri())
