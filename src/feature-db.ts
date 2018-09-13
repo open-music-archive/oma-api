@@ -49,8 +49,10 @@ async function insertFeatures(features: DbSoundObjectFeatures): Promise<ObjectID
   return (await db.collection(FEATURES).insertOne(features)).insertedId;
 }
 
-export async function insertClustering(clustering: Clustering): Promise<ObjectID> {
-  return (await db.collection(CLUSTERINGS).insertOne(clustering)).insertedId;
+export async function insertClustering(c: DbClustering): Promise<number> {
+  const clusteringId = (await db.collection(CLUSTERINGS).insertOne(c.clustering)).insertedId;
+  c.clusters.forEach(cluster => { cluster.clusteringID = clusteringId });
+  return (await db.collection(CLUSTERS).insertMany(c.clusters)).result.n;
 }
 
 // QUERY FUNCTIONS
