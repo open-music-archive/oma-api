@@ -78,7 +78,9 @@ export abstract class Texture {
       let tries = 0;
       while (material.length < size && tries < MAX_TRIES) {
         const fromDate = this.options.prioritizeRecent ? this.getDate(tries) : undefined;
-        material = material.concat(this.getSoundMaterial(size, fromDate));
+        const part = this.options.prioritizeRecent && (tries < MAX_TRIES-1) ?
+          (size-material.length)/2 : size;
+        material = material.concat(this.getSoundMaterial(part, fromDate));
         tries++;
       }
     }
