@@ -3,7 +3,7 @@ import * as _ from 'lodash';
 import { URL } from './config';
 import { RecordSide, Clustering } from './types';
 import { DbSoundObject, DbSoundObjectFeatures, DbClustering, Cluster } from './db-types';
-import { toDbFeatures } from './util';
+import { toDbFeatures, objectIdWithTimestamp } from './util';
 
 const RECORDINGS = "recordings";
 const FEATURES = "soundObjectFeatures";
@@ -83,8 +83,8 @@ export async function getAllNormalFeatures(): Promise<DbSoundObjectFeatures[]> {
   return db.collection(FEATURES).find({}).project({"normalFeatures": 1}).toArray();
 }
 
-export async function getRandomSoundObjects(count: number): Promise<DbSoundObject[]> {
-  return aggregateSoundObjects([{ $sample: { size: count } }]);
+export async function getRandomSoundObjects(count: number, fromDate?: Date): Promise<DbSoundObject[]> {
+  return aggregateSoundObjects([{ $sample: { size: count } }], fromDate);
 }
 
 export async function getSimilarAudio(audioUri: string): Promise<string> {
@@ -104,8 +104,15 @@ export async function removeNonClusteredIds() {
     .remove({_id: {$nin: oidsInClusters}});
 }
 
-export async function getSimilarSoundObjects(object: DbSoundObject): Promise<DbSoundObject[]> {
-  const cluster: Cluster = (await db.collection(CLUSTERINGS).aggregate([
+export async function getCracklingSoundObjects(fromDate?: Date): Promise<DbSoundObject[]> {
+  const crackle = await findSoundObjects({"audioUri": {
+    "$regex": "0b8dc245-93ba-4a84-a6bd-5ba2cf00dfb7.wav"
+  }});
+  return getSimilarSoundObjects(crackle[0], fromDate);
+}
+
+export async function getSimilarSoundObjects(object: DbSoundObject, fromDate?: Date): Promise<DbSoundObject[]> {
+  const aggregate = addFromDateToAggregate([
     { $project: { clusters: {
       $filter: { input: "$clusters", as: "c", cond: {
         $in: [ object._id.toHexString(), "$$c.signals" ]
@@ -123,38 +130,52 @@ export async function getSimilarSoundObjects(object: DbSoundObject): Promise<DbS
   return [];
 }
 
-export async function getLongAndShortObjects(long: number, short: number): Promise<DbSoundObject[]> {
-  const longs = _.sampleSize(await getLongestSoundObjects(NUM_OBJECTS/50), long);
-  const shorts = _.sampleSize(await getShortestSoundObjects(NUM_OBJECTS/50), short);
+export async function getLongAndShortObjects(long: number, short: number, fromDate?: Date): Promise<DbSoundObject[]> {
+  const longs = _.sampleSize(await getLongestSoundObjects(NUM_OBJECTS/50, fromDate), long);
+  const shorts = _.sampleSize(await getShortestSoundObjects(NUM_OBJECTS/50, fromDate), short);
   return longs.concat(shorts);
 }
 
-export async function getLoudestSoundObjectsOfDuration(duration: number, count: number): Promise<DbSoundObject[]> {
+export async function getQuieterObjects(count: number, fromDate?: Date): Promise<DbSoundObject[]> {
+  return _.sampleSize(await getQuietestSoundObjects(NUM_OBJECTS/4, fromDate), count);
+}
+
+export async function getLouderObjects(count: number, fromDate?: Date): Promise<DbSoundObject[]> {
+  return _.sampleSize(await getLoudestSoundObjects(NUM_OBJECTS/4, fromDate), count);
+}
+
+export async function getQuietestSoundObjectsOfDuration(duration: number, count: number, fromDate?: Date): Promise<DbSoundObject[]> {
   return aggregateSoundObjects(getClosest("duration", duration, count*10)
-    .concat(getMaxFeature(AMP_FEATURE, count)));
+    .concat(getMinFeature(AMP_FEATURE, count)), fromDate);
 }
 
-export async function getLoudestSoundObjects(count: number): Promise<DbSoundObject[]> {
-  return aggregateSoundObjects(getMaxFeature(AMP_FEATURE, count));
+export async function getLoudestSoundObjectsOfDuration(duration: number, count: number, fromDate?: Date): Promise<DbSoundObject[]> {
+  return aggregateSoundObjects(getClosest("duration", duration, count*10)
+    .concat(getMaxFeature(AMP_FEATURE, count)), fromDate);
 }
 
-export async function getSoundObjectsOfDuration(duration: number, count: number): Promise<DbSoundObject[]> {
-  return aggregateSoundObjects(getClosest("duration", duration, count));
+export async function getQuietestSoundObjects(count: number, fromDate?: Date): Promise<DbSoundObject[]> {
+  return aggregateSoundObjects(getMinFeature(AMP_FEATURE, count), fromDate);
 }
 
-export async function getLongestSoundObjects(count: number): Promise<DbSoundObject[]> {
-  return aggregateSoundObjects(getMax("duration", count));
+export async function getLoudestSoundObjects(count: number,fromDate?: Date): Promise<DbSoundObject[]> {
+  return aggregateSoundObjects(getMaxFeature(AMP_FEATURE, count), fromDate);
 }
 
-export async function getShortestSoundObjects(count: number): Promise<DbSoundObject[]> {
-  return aggregateSoundObjects(getMin("duration", count));
+export async function getSoundObjectsOfDuration(duration: number, count: number, fromDate?: Date): Promise<DbSoundObject[]> {
+  return aggregateSoundObjects(getClosest("duration", duration, count), fromDate);
 }
 
-export async function getCracklingSoundObjects(): Promise<DbSoundObject[]> {
-  const crackle = await findSoundObjects({"audioUri": {
-    "$regex": "0b8dc245-93ba-4a84-a6bd-5ba2cf00dfb7.wav"
-  }});
-  return getSimilarSoundObjects(crackle[0]);
+export async function getLongestSoundObjects(count: number, fromDate?: Date): Promise<DbSoundObject[]> {
+  return aggregateSoundObjects(getMax("duration", count), fromDate);
+}
+
+export async function getShortestSoundObjects(count: number, fromDate?: Date): Promise<DbSoundObject[]> {
+  return aggregateSoundObjects(getMin("duration", count), fromDate);
+}
+
+function getMinFeature(featureIndex: number, count: number): Object[] {
+  return addFeatureMean(featureIndex).concat(getMin("mean", count));
 }
 
 function getMaxFeature(featureIndex: number, count: number): Object[] {
@@ -194,11 +215,20 @@ function getClosest(field: string, value: number, count: number): Object[] {
   ];
 }
 
-async function aggregateSoundObjects(aggregate: Object[]): Promise<DbSoundObject[]> {
+async function aggregateSoundObjects(aggregate: Object[], fromDate?: Date): Promise<DbSoundObject[]> {
+  aggregate = addFromDateToAggregate(aggregate, fromDate);
   return db.collection(FEATURES)
     .aggregate(aggregate)
     .project({"audioUri": 1, "duration": 1})
     .toArray();
+}
+
+function addFromDateToAggregate(aggregate: Object[], fromDate?: Date) {
+  return fromDate ? getFromDate(fromDate).concat(aggregate) : aggregate;
+}
+
+function getFromDate(date: Date): Object[] {
+  return [{ $match: { _id: { $gt: objectIdWithTimestamp(date) } } }];
 }
 
 async function findSoundObjects(query: Object): Promise<DbSoundObject[]> {

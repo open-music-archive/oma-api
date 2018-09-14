@@ -7,8 +7,11 @@ import { mapSeries } from '../util';
 export enum SoundMaterial {
   Random,
   Similars,
-  Loudest,
+  Quieter,
+  Louder,
+  Longer,
   LongAndShort,
+  LoudestAndLong,
   Crackling
 }
 
@@ -23,6 +26,7 @@ export interface TextureOptions {
   duration?: number,
   objects?: DbSoundObject[],
   soundMaterialType?: SoundMaterial,
+  minSoundMaterialSize?: number,
   maxSoundMaterialSize?: number,
   prioritizeRecent?: boolean,
   regenerateSoundMaterial?: boolean,
@@ -33,7 +37,7 @@ export interface TextureOptions {
 
 export abstract class Texture {
 
-  protected dymoGen = new DymoGenerator();
+  protected dymoGen: DymoGenerator;
   protected uri: Promise<string>;
   protected jsonld: Promise<string>;
 
@@ -42,6 +46,7 @@ export abstract class Texture {
   }
 
   async regenerate() {
+    this.dymoGen = new DymoGenerator();
     await this.initSoundMaterial();
     this.uri = this.generate();
     await this.postGenerate();
@@ -71,9 +76,11 @@ export abstract class Texture {
   protected abstract generate(): Promise<string>;
 
   private async initSoundMaterial(): Promise<void> {
-    const MAX_TRIES = 4;
+    const MAX_TRIES = 5;
     if (!this.options.objects || this.options.regenerateSoundMaterial) {
-      const size = _.random(this.options.maxSoundMaterialSize || 25) + 1;
+      const min = this.options.minSoundMaterialSize || 3
+      const max = this.options.maxSoundMaterialSize || 25
+      const size = _.random(max-min) + min;
       let material: DbSoundObject[] = [];
       await mapSeries(_.range(MAX_TRIES), async t => {
         if (material.length < size && t < MAX_TRIES) {
@@ -90,20 +97,32 @@ export abstract class Texture {
 
   private getDate(recency: number) {
     let decrement: number;
-    if (recency == 0) { decrement = 60*60*1000 } //one hour
-    else if (recency == 1) { decrement = 24*60*60*1000 } //one day
-    else if (recency == 2) { decrement = 7*24*60*60*1000 } //one week
-    else if (recency == 3) { decrement = 30*7*24*60*60*1000 } //one month
+    if (recency == 0) { decrement = 10*60*1000 } //ten minutes
+    else if (recency == 1) { decrement = 60*60*1000 } //one hour
+    else if (recency == 2) { decrement = 24*60*60*1000 } //one day
+    else if (recency == 3) { decrement = 7*24*60*60*1000 } //one week
+    else if (recency == 4) { decrement = 30*7*24*60*60*1000 } //one month
     return new Date(Date.now() - decrement);
   }
 
   private async getSoundMaterial(size: number, fromDate?: Date): Promise<DbSoundObject[]> {
     if (this.options.soundMaterialType == SoundMaterial.Similars) {
-      const randomObject = (await featureDb.getRandomSoundObjects(1, fromDate))[0];
-      return featureDb.getSimilarSoundObjects(randomObject, fromDate);
+      const randomObject = await featureDb.getRandomSoundObjects(1, fromDate);
+      if (randomObject.length > 0) {
+        return _.sampleSize(await featureDb.getSimilarSoundObjects(randomObject[0], fromDate), size);
+      }
+      return [];
     } else if (this.options.soundMaterialType == SoundMaterial.Random) {
       return featureDb.getRandomSoundObjects(size, fromDate);
-    } else if (this.options.soundMaterialType == SoundMaterial.Loudest) {
+    } else if (this.options.soundMaterialType == SoundMaterial.Quieter) {
+      const duration = Math.random()/2+0.125;
+      return featureDb.getQuietestSoundObjectsOfDuration(duration, size, fromDate);
+    } else if (this.options.soundMaterialType == SoundMaterial.Longer) {
+      const duration = Math.random()/2+0.125;
+      return featureDb.getSoundObjectsOfDuration(duration, size, fromDate);
+    } else if (this.options.soundMaterialType == SoundMaterial.Louder) {
+      return featureDb.getLouderObjects(size, fromDate);
+    } else if (this.options.soundMaterialType == SoundMaterial.LoudestAndLong) {
       const duration = Math.random()/2+0.125;
       return featureDb.getLoudestSoundObjectsOfDuration(duration, size, fromDate);
     } else if (this.options.soundMaterialType == SoundMaterial.Crackling) {
@@ -180,14 +199,12 @@ export class RandomConcat extends Texture {
 export class RandomOnset extends Texture {
 
   protected async generate(): Promise<string> {
-    if (!this.options.duration) {
-      this.options.duration = 4*Math.random()+2;
-    }
+    const dur = this.options.duration ? this.options.duration : 4*Math.random()+2;
     const sequence = await this.dymoGen.addDymo(null, null, uris.SEQUENCE);
     //only approximate...
-    await this.dymoGen.setDymoParameter(sequence, uris.DURATION, this.options.duration);
+    await this.dymoGen.setDymoParameter(sequence, uris.DURATION, dur);
     await Promise.all(this.options.objects.map(async o =>
-      await this.addRandomOnsetDymo(sequence, o.audioUri, this.options.duration)));
+      await this.addRandomOnsetDymo(sequence, o.audioUri, dur)));
     return sequence;
   }
 

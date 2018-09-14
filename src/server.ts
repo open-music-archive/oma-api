@@ -3,7 +3,7 @@ import * as bodyParser from 'body-parser';
 import * as socketIO from 'socket.io';
 import * as store from './store';
 import * as featureDb from './feature-db';
-import * as clusterer from './clusterer';
+//import * as clusterer from './clusterer';
 import { RecordSide } from './types';
 import { DbClustering, ClusteringParameters } from './db-types';
 import * as test from './test';
@@ -63,7 +63,7 @@ app.get('/features', async (req, res) => {
 const server = app.listen(PORT, async () => {
   await featureDb.connect();
   console.log('open music archive server started at http://localhost:' + PORT);
-  // await initStreamAndSockets();
+  await initStreamAndSockets();
   //console.log((await featureDb.getSoundObjectsNewerThan(new Date(Date.now()-(4.1*60*60*1000)))).length);
 
   //addTestRecordSide();
@@ -79,13 +79,8 @@ const server = app.listen(PORT, async () => {
 });
 
 async function initStreamAndSockets() {
-  //nice and experimental:
-  composition = new CompositionStream(2000, false, textures.getNiceAndExperimentalLoop());
-  //composition = streams.getFun();
-  //composition = new CompositionStream(10000, false, textures.getCracklingLoop());
-  //composition = new CompositionStream(10000, false, );
-  //const loop = textures.getSimilarityLoop();
-  //console.log(await loop.getUri())
+
+  composition = streams.getGrowing();
 
   const io = socketIO.listen(server);
   //io.origins(['http://localhost:4200', 'https://open-music-archive.github.io/', 'https://www.playitagainuseittogether.com']);
