@@ -79,13 +79,8 @@ const server = app.listen(PORT, async () => {
 });
 
 async function initStreamAndSockets() {
-  //nice and experimental:
-  composition = new CompositionStream(10000, false, textures.getSimilarityLoop());
-  //composition = streams.getFun();
-  //composition = new CompositionStream(10000, false, textures.getCracklingLoop());
-  //composition = new CompositionStream(10000, false, );
-  //const loop = textures.getSimilarityLoop();
-  //console.log(await loop.getUri())
+  
+  composition = streams.getDefault();
 
   const io = socketIO.listen(server);
   //io.origins(['http://localhost:4200', 'https://open-music-archive.github.io/', 'https://www.playitagainuseittogether.com']);

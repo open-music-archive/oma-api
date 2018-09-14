@@ -7,7 +7,7 @@ export function getNiceAndExperimentalLoop(prioritizeRecent = true) {
     regenerateSoundMaterial: true,
     prioritizeRecent: prioritizeRecent,
     loop:true, panning: true, effects: true,
-    params: [{type: uris.PLAYBACK_RATE, range: [0.1,1]}]
+    //params: [{type: uris.PLAYBACK_RATE, range: [0.1,1]}]
   });
 }
 

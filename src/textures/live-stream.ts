@@ -1,47 +1,71 @@
+import * as _ from 'lodash';
 import { Observable } from 'rxjs/Observable';
 import { BehaviorSubject } from 'rxjs/BehaviorSubject';
 import { Texture, Variation } from './texture';
 
-export class CompositionStream {
+export interface CompositionOptions {
+  updateInterval?: number,
+  updateIntervalRange?: [number, number],
+  variations?: boolean,
+  defaultTexture?: Texture
+}
 
-  private textures: BehaviorSubject<Texture>;
-  private totalGenerated = 0;
-  private previousTime: number;
+export abstract class CompositionStream {
 
-  constructor(private updateInterval?: number,
-      private variations?: boolean,
-      private defaultTexture?: Texture) {
+  protected textures: BehaviorSubject<Texture>;
+  protected totalGenerated = 0;
+  protected previousTime: number;
+  protected previousInterval: number;
+
+  constructor(protected options: CompositionOptions) {
     this.textures = new BehaviorSubject<Texture>(null);
-    this.updateTexture();
+    this.update();
   }
 
   getTextureStream(): Observable<Texture> {
     return this.textures.asObservable();
   }
 
-  private async updateTexture() {
-    const previousTexture = this.textures.getValue();
-    let newTexture: Texture;
-    if (previousTexture && this.variations) {
-      newTexture = await new Variation(await previousTexture.getJsonld());
-    } else {
-      newTexture = await this.defaultTexture.regenerate();
+  protected abstract getNextTexture(): Promise<Texture>;
+
+  protected getNewUpdateInterval(duration: number) {
+    if (this.options.updateIntervalRange) {
+      const r = this.options.updateIntervalRange
+      return _.random(r[1]-r[0])+r[0];
+    } else if (this.options.updateInterval) {
+      return this.options.updateInterval;
     }
+    return duration*1000;
+  }
+
+  protected async update() {
+    const newTexture = await this.getNextTexture();
     this.textures.next(newTexture);
     this.totalGenerated++;
     const duration = await newTexture.getDuration();
     const time = Date.now();
-    const interval = this.updateInterval ? this.updateInterval : duration*1000;
-    const timeDiff = this.previousTime ? Math.round((time-this.previousTime-interval))/1000 : 0;
+    const timeDiff = this.previousTime ? Math.round((time-this.previousTime-this.previousInterval))/1000 : 0;
     console.log("new texture, duration "+ duration+ ", total generated "+ this.totalGenerated
       + ", time taken " + timeDiff + ", " + this.getMemoryUsage());
     this.previousTime = time;
-    setTimeout(async () => this.updateTexture(), interval);
+    this.previousInterval = this.getNewUpdateInterval(duration);
+    setTimeout(async () => this.update(), this.previousInterval);
   }
 
-  private getMemoryUsage() {
+  protected getMemoryUsage() {
     const used = process.memoryUsage().heapUsed / 1024 / 1024;
     return "memory " + (Math.round(used * 100) / 100) + "MB";
   }
 
+}
+
+export class SimpleComposition extends CompositionStream {
+  protected async getNextTexture() {
+    const previousTexture = this.textures.getValue();
+    if (previousTexture && this.options.variations) {
+      return new Variation(await previousTexture.getJsonld());
+    } else {
+      return this.options.defaultTexture.regenerate();
+    }
+  }
 }

@@ -189,7 +189,6 @@ export class RandomOnset extends Texture {
     const sequence = await this.dymoGen.addDymo(null, null, uris.SEQUENCE);
     //only approximate...
     await this.dymoGen.setDymoParameter(sequence, uris.DURATION, dur);
-    console.log(dur)
     await Promise.all(this.options.objects.map(async o =>
       await this.addRandomOnsetDymo(sequence, o.audioUri, dur)));
     return sequence;
