@@ -1,7 +1,7 @@
 import { MongoClient, Db, ObjectID } from 'mongodb';
 import * as _ from 'lodash';
 import { URL } from './config';
-import { RecordSide } from './types';
+import { RecordSide, Clustering } from './types';
 import { DbSoundObject, DbSoundObjectFeatures, DbClustering, Cluster } from './db-types';
 import { toDbFeatures } from './util';
 
@@ -55,6 +55,22 @@ export async function insertClustering(c: DbClustering): Promise<number> {
   return (await db.collection(CLUSTERS).insertMany(c.clusters)).result.n;
 }
 
+export async function getClustering(clusteringID: string): Promise<Clustering> {
+  var clusterings = (await db.collection(CLUSTERINGS).find({'_id': new ObjectID(clusteringID) })
+    .toArray());
+  console.log(clusterings);
+  return <Clustering>clusterings[0];
+}
+
+export async function getCluster(clusteringID: string, index: number): Promise<Cluster> {
+  var clusters = (await db.collection(CLUSTERS).find({
+    'clusterinID': new ObjectID(clusteringID),
+    'index': index
+  }).toArray());
+  console.log(clusters);
+  return <Cluster>clusters[0];
+}
+
 // QUERY FUNCTIONS
 
 export function getAwesomeLoop(): Promise<{}> {
@@ -98,7 +114,7 @@ export async function getSimilarSoundObjects(object: DbSoundObject): Promise<DbS
     { $unwind: "$clusters" },
     { $replaceRoot: { newRoot: "$clusters" } },
     { $project: { signals: 1 } }
-  ], fromDate);
+  ], fromDate));
   const cluster: Cluster = (await db.collection(CLUSTERINGS).aggregate(aggregate).toArray())[1]; //switch clustering here!
   if (cluster) {
     const ids = cluster.signals.map(s => new ObjectID(s));

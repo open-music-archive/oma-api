@@ -1,5 +1,5 @@
 import { ObjectID } from 'mongodb';
-import { FeatureSummary, Clustering } from './types';
+import { FeatureSummary, Clustering, SoundObject } from './types';
 
 export interface DbSoundObject {
   _id: ObjectID,
@@ -22,4 +22,9 @@ export interface Cluster {
 export interface DbClustering{
   clustering: Clustering,
   clusters: Cluster[]
+}
+
+export interface ClusteringParameters {
+  clusteringID: string,
+  soundObject: SoundObject
 }

@@ -5,7 +5,7 @@ import * as store from './store';
 import * as featureDb from './feature-db';
 import * as clusterer from './clusterer';
 import { RecordSide } from './types';
-import { DbClustering } from './db-types';
+import { DbClustering, ClusteringParameters } from './db-types';
 import * as test from './test';
 import { CompositionStream } from './textures/live-stream';
 import { Changing } from './textures/texture';
@@ -41,7 +41,7 @@ app.post('/clustering', async (req, res) => {
 });
 
 app.post('/classify', async (req, res) => {
-  res.send(clusterer.classify(req.body));
+  res.send(clusterer.classify(<ClusteringParameters>req.body));
 });
 
 app.get('/records', (req, res) => {
