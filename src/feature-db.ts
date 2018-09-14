@@ -120,12 +120,29 @@ export async function getLongAndShortObjects(long: number, short: number, fromDa
   return longs.concat(shorts);
 }
 
+export async function getQuieterObjects(count: number, fromDate?: Date): Promise<DbSoundObject[]> {
+  return _.sampleSize(await getQuietestSoundObjects(NUM_OBJECTS/4, fromDate), count);
+}
+
+export async function getLouderObjects(count: number, fromDate?: Date): Promise<DbSoundObject[]> {
+  return _.sampleSize(await getLoudestSoundObjects(NUM_OBJECTS/4, fromDate), count);
+}
+
+export async function getQuietestSoundObjectsOfDuration(duration: number, count: number, fromDate?: Date): Promise<DbSoundObject[]> {
+  return aggregateSoundObjects(getClosest("duration", duration, count*10)
+    .concat(getMinFeature(AMP_FEATURE, count)), fromDate);
+}
+
 export async function getLoudestSoundObjectsOfDuration(duration: number, count: number, fromDate?: Date): Promise<DbSoundObject[]> {
   return aggregateSoundObjects(getClosest("duration", duration, count*10)
     .concat(getMaxFeature(AMP_FEATURE, count)), fromDate);
 }
 
-export async function getLoudestSoundObjects(count: number, fromDate?: Date): Promise<DbSoundObject[]> {
+export async function getQuietestSoundObjects(count: number, fromDate?: Date): Promise<DbSoundObject[]> {
+  return aggregateSoundObjects(getMinFeature(AMP_FEATURE, count), fromDate);
+}
+
+export async function getLoudestSoundObjects(count: number,fromDate?: Date): Promise<DbSoundObject[]> {
   return aggregateSoundObjects(getMaxFeature(AMP_FEATURE, count), fromDate);
 }
 
@@ -139,6 +156,10 @@ export async function getLongestSoundObjects(count: number, fromDate?: Date): Pr
 
 export async function getShortestSoundObjects(count: number, fromDate?: Date): Promise<DbSoundObject[]> {
   return aggregateSoundObjects(getMin("duration", count), fromDate);
+}
+
+function getMinFeature(featureIndex: number, count: number): Object[] {
+  return addFeatureMean(featureIndex).concat(getMin("mean", count));
 }
 
 function getMaxFeature(featureIndex: number, count: number): Object[] {

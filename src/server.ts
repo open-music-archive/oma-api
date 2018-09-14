@@ -79,8 +79,8 @@ const server = app.listen(PORT, async () => {
 });
 
 async function initStreamAndSockets() {
-  
-  composition = streams.getDefault();
+
+  composition = streams.getGrowing();
 
   const io = socketIO.listen(server);
   //io.origins(['http://localhost:4200', 'https://open-music-archive.github.io/', 'https://www.playitagainuseittogether.com']);

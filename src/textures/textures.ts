@@ -13,7 +13,7 @@ export function getNiceAndExperimentalLoop(prioritizeRecent = true) {
 
 export function getBenLoop() {
   return new RandomOnset({
-    soundMaterialType: SoundMaterial.Loudest,
+    soundMaterialType: SoundMaterial.LoudestAndLong,
     regenerateSoundMaterial: true,
     prioritizeRecent: true,
     loop:true, panning: true, effects: true,
@@ -32,7 +32,7 @@ export function getShortAndExperimentalLoop(prioritizeRecent = true) {
 
 export function getSlowAndLow(prioritizeRecent = true) {
   return new RandomOnset({
-    soundMaterialType: SoundMaterial.Loudest,
+    soundMaterialType: SoundMaterial.Louder,
     regenerateSoundMaterial: true,
     prioritizeRecent: prioritizeRecent,
     duration: 4, panning: true, loop:true, effects: true,
@@ -53,9 +53,22 @@ export function getSimilarityLoop(prioritizeRecent = true) {
 export function getCracklingLoop(prioritizeRecent = true) {
   return new RandomConcat({
     soundMaterialType: SoundMaterial.Crackling,
-    maxSoundMaterialSize: 50,
+    minSoundMaterialSize: 10,
+    maxSoundMaterialSize: 40,
     regenerateSoundMaterial: true,
     prioritizeRecent: prioritizeRecent,
     loop: true, panning: true, effects: true
+  });
+}
+
+export function getDenseRecentMaterialLoop(soundMaterial = SoundMaterial.LongAndShort) {
+  return new RandomOnset({
+    soundMaterialType: soundMaterial,
+    regenerateSoundMaterial: true,
+    minSoundMaterialSize: 10,
+    maxSoundMaterialSize: 40,
+    prioritizeRecent: true,
+    loop:true, panning: true, effects: true,
+    //params: [{type: uris.PLAYBACK_RATE, range: [0.1,1]}]
   });
 }

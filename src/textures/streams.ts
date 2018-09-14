@@ -1,4 +1,4 @@
-import { SimpleComposition } from './live-stream';
+import { SimpleComposition, GrowingComposition } from './live-stream';
 import * as textures from './textures';
 
 export function getDefault() {
@@ -22,5 +22,12 @@ export function getCrackling() {
     updateInterval: 10000,
     variations: false,
     defaultTexture: textures.getCracklingLoop()
+  })
+}
+
+export function getGrowing() {
+  return new GrowingComposition({
+    updateInterval: 10000,
+    //updateIntervalRange: [2000, 5000]
   })
 }

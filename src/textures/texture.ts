@@ -7,8 +7,11 @@ import { mapSeries } from '../util';
 export enum SoundMaterial {
   Random,
   Similars,
-  Loudest,
+  Quieter,
+  Louder,
+  Longer,
   LongAndShort,
+  LoudestAndLong,
   Crackling
 }
 
@@ -23,6 +26,7 @@ export interface TextureOptions {
   duration?: number,
   objects?: DbSoundObject[],
   soundMaterialType?: SoundMaterial,
+  minSoundMaterialSize?: number,
   maxSoundMaterialSize?: number,
   prioritizeRecent?: boolean,
   regenerateSoundMaterial?: boolean,
@@ -74,7 +78,9 @@ export abstract class Texture {
   private async initSoundMaterial(): Promise<void> {
     const MAX_TRIES = 5;
     if (!this.options.objects || this.options.regenerateSoundMaterial) {
-      const size = _.random(this.options.maxSoundMaterialSize || 25) + 1;
+      const min = this.options.minSoundMaterialSize || 3
+      const max = this.options.maxSoundMaterialSize || 25
+      const size = _.random(max-min) + min;
       let material: DbSoundObject[] = [];
       await mapSeries(_.range(MAX_TRIES), async t => {
         if (material.length < size && t < MAX_TRIES) {
@@ -108,7 +114,15 @@ export abstract class Texture {
       return [];
     } else if (this.options.soundMaterialType == SoundMaterial.Random) {
       return featureDb.getRandomSoundObjects(size, fromDate);
-    } else if (this.options.soundMaterialType == SoundMaterial.Loudest) {
+    } else if (this.options.soundMaterialType == SoundMaterial.Quieter) {
+      const duration = Math.random()/2+0.125;
+      return featureDb.getQuietestSoundObjectsOfDuration(duration, size, fromDate);
+    } else if (this.options.soundMaterialType == SoundMaterial.Longer) {
+      const duration = Math.random()/2+0.125;
+      return featureDb.getSoundObjectsOfDuration(duration, size, fromDate);
+    } else if (this.options.soundMaterialType == SoundMaterial.Louder) {
+      return featureDb.getLouderObjects(size, fromDate);
+    } else if (this.options.soundMaterialType == SoundMaterial.LoudestAndLong) {
       const duration = Math.random()/2+0.125;
       return featureDb.getLoudestSoundObjectsOfDuration(duration, size, fromDate);
     } else if (this.options.soundMaterialType == SoundMaterial.Crackling) {
