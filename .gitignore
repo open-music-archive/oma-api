@@ -9,3 +9,5 @@ lib
 test
 src/config.js
 src/test-data/long-record-side.json
+
+openmusicarchive
