@@ -80,7 +80,7 @@ const server = app.listen(PORT, async () => {
 
 async function initStreamAndSockets() {
   //nice and experimental:
-  composition = new CompositionStream(10000, false, textures.getNiceAndExperimentalLoop());
+  composition = new CompositionStream(10000, false, textures.getSimilarityLoop());
   //composition = streams.getFun();
   //composition = new CompositionStream(10000, false, textures.getCracklingLoop());
   //composition = new CompositionStream(10000, false, );

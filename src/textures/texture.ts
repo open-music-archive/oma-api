@@ -33,7 +33,7 @@ export interface TextureOptions {
 
 export abstract class Texture {
 
-  protected dymoGen = new DymoGenerator();
+  protected dymoGen: DymoGenerator;
   protected uri: Promise<string>;
   protected jsonld: Promise<string>;
 
@@ -42,11 +42,11 @@ export abstract class Texture {
   }
 
   async regenerate() {
+    this.dymoGen = new DymoGenerator();
     await this.initSoundMaterial();
     this.uri = this.generate();
     await this.postGenerate();
     this.jsonld = this.dymoGen.getStore().uriToJsonld(await this.uri);
-    this.dymoGen = new DymoGenerator();
     return this;
     /*this.uri = this.initSoundMaterial().then(this.generate);
     this.jsonld = this.uri.then(() =>
@@ -101,8 +101,11 @@ export abstract class Texture {
 
   private async getSoundMaterial(size: number, fromDate?: Date): Promise<DbSoundObject[]> {
     if (this.options.soundMaterialType == SoundMaterial.Similars) {
-      const randomObject = (await featureDb.getRandomSoundObjects(1, fromDate))[0];
-      return featureDb.getSimilarSoundObjects(randomObject, fromDate);
+      const randomObject = await featureDb.getRandomSoundObjects(1, fromDate);
+      if (randomObject.length > 0) {
+        return _.sampleSize(await featureDb.getSimilarSoundObjects(randomObject[0], fromDate), size);
+      }
+      return [];
     } else if (this.options.soundMaterialType == SoundMaterial.Random) {
       return featureDb.getRandomSoundObjects(size, fromDate);
     } else if (this.options.soundMaterialType == SoundMaterial.Loudest) {
@@ -182,14 +185,13 @@ export class RandomConcat extends Texture {
 export class RandomOnset extends Texture {
 
   protected async generate(): Promise<string> {
-    if (!this.options.duration) {
-      this.options.duration = 4*Math.random()+2;
-    }
+    const dur = this.options.duration ? this.options.duration : 4*Math.random()+2;
     const sequence = await this.dymoGen.addDymo(null, null, uris.SEQUENCE);
     //only approximate...
-    await this.dymoGen.setDymoParameter(sequence, uris.DURATION, this.options.duration);
+    await this.dymoGen.setDymoParameter(sequence, uris.DURATION, dur);
+    console.log(dur)
     await Promise.all(this.options.objects.map(async o =>
-      await this.addRandomOnsetDymo(sequence, o.audioUri, this.options.duration)));
+      await this.addRandomOnsetDymo(sequence, o.audioUri, dur)));
     return sequence;
   }
 

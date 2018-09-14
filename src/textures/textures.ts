@@ -44,15 +44,17 @@ export function getSimilarityLoop(prioritizeRecent = true) {
   return new RandomConcat({
     soundMaterialType: SoundMaterial.Similars,
     regenerateSoundMaterial: true,
+    maxSoundMaterialSize: 50,
     prioritizeRecent: prioritizeRecent,
-    repeat: 3, panning: true, effects: true
+    loop: true, panning: true, effects: true
   });
 }
 
 export function getCracklingLoop(prioritizeRecent = true) {
   return new RandomConcat({
     soundMaterialType: SoundMaterial.Crackling,
-    regenerateSoundMaterial: false,
+    maxSoundMaterialSize: 50,
+    regenerateSoundMaterial: true,
     prioritizeRecent: prioritizeRecent,
     loop: true, panning: true, effects: true
   });
