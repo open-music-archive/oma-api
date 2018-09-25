@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import * as _ from 'lodash';
 import * as store from './store';
 import * as db from './feature-db';
+import { RecordSide } from './types';
 
 export async function addTestRecordSide() {
   await store.addRecordSide(loadJson('test-data/long-record-side.json'));
@@ -11,13 +12,32 @@ export async function addTestRecordSide() {
 }
 
 export async function transferAllJsonToFeatureDb(dir: string) {
-  return mapSeries(getAllJsonFiles(dir), async f => {
-    console.log("started", f);
-    const side = loadJson(dir+f);
-    await db.insertRecordSide(side);
-    writeJson(dir+f, side);
-    console.log("done with", f);
+  const sides: RecordSide[] = getAllJsonFiles(dir).map(f => loadJson(dir+f));
+  //sort and dedupe
+  sides.sort((a,b) => new Date(a.time).getTime() - new Date(b.time).getTime());
+  const dupeTitles = _(sides).groupBy(s => s.title).pickBy(x => x.length > 1).keys().value();
+  const dupes = dupeTitles.map(d => sides.filter(s => s.title == d));
+  //always keep last record of same ones
+  const deduped = dupes.map(ds => ds.filter((d,i) => ds.length<=i+1 || !sameRecordSide(d, ds[i+1])));
+  const nonDupes = sides.filter(s => _.flatten(dupes).indexOf(s) < 0);
+  const uniqueSides = nonDupes.concat(_.flatten(deduped));
+  uniqueSides.sort((a,b) => new Date(a.time).getTime() - new Date(b.time).getTime());
+  console.log(sides.length, uniqueSides.length);
+  //add
+  await mapSeries(uniqueSides, async s => {
+    console.log("adding", s.artist, "-", s.title);
+    await db.insertRecordSide(s);
   });
+  console.log("done");
+}
+
+function sameRecordSide(a: RecordSide, b: RecordSide) {
+  const deltaTime = Math.abs(new Date(a.time).getTime()-new Date(b.time).getTime());
+  const deltaLength = Math.abs(a.soundObjects.length - b.soundObjects.length);
+  return _.lowerCase(a.title) == _.lowerCase(b.title)
+    && deltaTime < 1000*60*60*24 //same if redegidised within 24 hours
+    && _.lowerCase(a.catNo) == _.lowerCase(b.catNo)
+    //&& deltaLength < 3;
 }
 
 export async function saveRandomSoundObjectsToDisk(count: number, dir: string) {

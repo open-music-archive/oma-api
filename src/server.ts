@@ -73,6 +73,8 @@ const server = app.listen(PORT, async () => {
 
   await initStreamAndSockets();
 
+  //await test.transferAllJsonToFeatureDb('json/');
+
 
   //console.log((await featureDb.getSoundObjectsNewerThan(new Date(Date.now()-(4.1*60*60*1000)))).length);
 
