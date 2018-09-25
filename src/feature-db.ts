@@ -1,9 +1,10 @@
 import { MongoClient, Db, ObjectID } from 'mongodb';
 import * as _ from 'lodash';
 import { URL } from './config';
-import { RecordSide, Clustering } from './types';
-import { DbSoundObject, DbSoundObjectFeatures, DbClustering, Cluster } from './db-types';
+import { RecordSide, Clustering, SoundObject } from './types';
+import { DbSoundObject, DbSoundObjectFeatures, DbClustering, Cluster, ClusteringParameters } from './db-types';
 import { toDbFeatures, objectIdWithTimestamp } from './util';
+import { classify } from './clusterer';
 
 const RECORDINGS = "recordings";
 const FEATURES = "soundObjectFeatures";
@@ -30,8 +31,18 @@ export async function insertRecordSide(side: RecordSide) {
   const docIds = await Promise.all(side.soundObjects
     .map(o => insertFeatures(toDbFeatures(o, recId))));
   const updated = await updateRecording(recId, docIds);
-  console.log(recId, updated);
-  side.soundObjects.forEach((o,i) => o.featureGuid = docIds[i].toHexString());
+  side.soundObjects.forEach((o,i) => {
+    o.featureGuid = docIds[i].toHexString()
+    classifySoundObject(o);
+  });
+}
+
+async function classifySoundObject(soundObject: SoundObject) {
+  var clusterings = (await getAllClusterings());
+  clusterings.forEach(clustering => {
+    var index = classify(clustering, soundObject);
+    addSoundObjectIDtoCluster(soundObject.featureGuid, clustering._id, index);
+  })
 }
 
 async function updateRecording(recId: ObjectID, objIds: ObjectID[]): Promise<number> {
@@ -49,10 +60,26 @@ async function insertFeatures(features: DbSoundObjectFeatures): Promise<ObjectID
   return (await db.collection(FEATURES).insertOne(features)).insertedId;
 }
 
-export async function insertClustering(c: DbClustering): Promise<number> {
+async function addSoundObjectIDtoCluster(objId: string, clusteringID: ObjectID, index: number): Promise<number> {
+  var find = { index: index, clusteringID: clusteringID, signals: objId };
+  var cluster = <Cluster[]>(await db.collection(CLUSTERS).find(find).toArray());
+  if (cluster.length == 0) {
+    var query = { index: index, clusteringID: clusteringID };
+    var update = { $push: { signals: objId } };
+    var count = (await db.collection(CLUSTERS).updateOne(query, update)).modifiedCount;
+    return count;
+  }
+  else return 0;
+}
+
+export async function insertClustering(c: ClusteringParameters): Promise<number> {
   const clusteringId = (await db.collection(CLUSTERINGS).insertOne(c.clustering)).insertedId;
   c.clusters.forEach(cluster => { cluster.clusteringID = clusteringId });
   return (await db.collection(CLUSTERS).insertMany(c.clusters)).result.n;
+}
+
+export async function getAllClusterings(): Promise<DbClustering[]> {
+  return (await db.collection(CLUSTERINGS).find({})).toArray();
 }
 
 export async function getClustering(clusteringID: string): Promise<Clustering> {

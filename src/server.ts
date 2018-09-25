@@ -3,7 +3,6 @@ import * as bodyParser from 'body-parser';
 import * as socketIO from 'socket.io';
 import * as store from './store';
 import * as featureDb from './feature-db';
-// import * as clusterer from './clusterer';
 import { RecordSide } from './types';
 import { DbClustering, ClusteringParameters } from './db-types';
 import * as test from './test';
@@ -36,13 +35,9 @@ app.post('/record', async (req, res) => {
 });
 
 app.post('/clustering', async (req, res) => {
-  featureDb.insertClustering(<DbClustering>req.body);
+  featureDb.insertClustering(<ClusteringParameters>req.body);
   res.send();
 });
-
-// app.post('/classify', async (req, res) => {
-//   res.send(clusterer.classify(<ClusteringParameters>req.body));
-// });
 
 app.get('/records', (req, res) => {
   res.send(store.getRecords());

@@ -20,11 +20,15 @@ export interface Cluster {
 }
 
 export interface DbClustering{
-  clustering: Clustering,
-  clusters: Cluster[]
+  _id: ObjectID,
+  features: string[],
+  method: string,
+  ratio: number,
+  size: number,
+  centroids: number[][]
 }
 
 export interface ClusteringParameters {
-  clusteringID: string,
-  soundObject: SoundObject
+  clustering: Clustering,
+  clusters: Cluster[]
 }

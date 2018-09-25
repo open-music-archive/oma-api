@@ -1,13 +1,10 @@
 import * as clusterfck from 'clusterfck';
-import { ObjectID } from 'mongodb';
-import { ClusteringParameters, Cluster } from './db-types';
-import { Clustering } from './types';
-import * as featureDb from './feature-db';
+import { DbClustering } from './db-types';
+import { SoundObject } from './types';
 
-export async function classify(params: ClusteringParameters): Promise<Cluster> {
-  var clustering = await featureDb.getClustering(params.clusteringID);
+export function classify(clustering: DbClustering, soundObject: SoundObject): number {
   var kmeans = new clusterfck.Kmeans();
   kmeans.centroids = clustering.centroids;
-  var index = kmeans.classify(params.soundObject.normalFeatures);
-  return (await featureDb.getCluster(params.clusteringID, index));
+  var index = kmeans.classify(soundObject.normalFeatures);
+  return index;
 }
