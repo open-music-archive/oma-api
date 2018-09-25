@@ -165,8 +165,8 @@ export abstract class Texture {
       await this.setRandomParam(dymo, uris.HEIGHT, [-0.5, 0.5]);
     }
     if (this.options.effects) {
-      await this.setRandomParam(dymo, uris.REVERB, [0, 0.3], 0.5);
-      await this.setRandomParam(dymo, uris.DELAY, [0, 0.3], 0.3);
+      await this.setRandomParam(dymo, uris.REVERB, [0, 0.4], 0.4);
+      await this.setRandomParam(dymo, uris.DELAY, [0, 0.5], 0.3);
     }
     return dymo;
   }

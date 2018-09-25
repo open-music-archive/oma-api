@@ -54,22 +54,24 @@ export function getCracklingLoop(prioritizeRecent = true) {
   return new RandomConcat({
     soundMaterialType: SoundMaterial.Crackling,
     minSoundMaterialSize: 10,
-    maxSoundMaterialSize: 30,
+    maxSoundMaterialSize: 20,
     regenerateSoundMaterial: true,
     prioritizeRecent: prioritizeRecent,
-    loop: true, panning: true, effects: true
+    loop: true, panning: true, effects: true,
+    durationRange: [2.5, 7],
+    params: [{type: uris.AMPLITUDE, range: [0.6,1]}]
   });
 }
 
 export function getDenseRecentMaterialLoop(soundMaterial = SoundMaterial.LongAndShort) {
-  return new RandomOnset({
+  return new RandomConcat({
     soundMaterialType: soundMaterial,
     regenerateSoundMaterial: true,
-    minSoundMaterialSize: 5,
+    minSoundMaterialSize: 10,
     maxSoundMaterialSize: 20,
     prioritizeRecent: true,
     loop:true, panning: true, effects: true,
-    durationRange: [2.5, 5],
+    durationRange: [2.5, 7],
     params: [{type: uris.AMPLITUDE, range: [0.6,1]}]
   });
 }
