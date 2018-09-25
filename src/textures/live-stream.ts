@@ -77,7 +77,7 @@ export class SimpleComposition extends CompositionStream {
 
 export class GrowingComposition extends CompositionStream {
 
-  private MAX_LEVEL = 3;
+  private MAX_LEVEL = 1;
   private activityLevel: number;
   private crackling = textures.getCracklingLoop();
   private low = textures.getDenseRecentMaterialLoop(SoundMaterial.Quieter);
@@ -100,9 +100,15 @@ export class GrowingComposition extends CompositionStream {
   }
 
   private updateActivityLevel() {
-
     if (this.activityLevel == undefined) {
       this.activityLevel = 0;
+    } else if (this.activityLevel == 0) {
+      /*const delta = Math.random() < 0.75 ? 1 : -1;
+      const newLevel = this.activityLevel+delta;
+      this.activityLevel = Math.min(Math.max(newLevel, 0), this.MAX_LEVEL);*/
+      this.activityLevel = 1;
+    } else if (this.activityLevel == 1) {
+      this.activityLevel = Math.min(Math.max(_.random(3), 0), this.MAX_LEVEL); //stay or go
     } else {
       const delta = Math.random() < 0.5 ? 1 : -1;
       const newLevel = this.activityLevel+delta;

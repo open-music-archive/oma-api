@@ -43,6 +43,10 @@ app.get('/records', (req, res) => {
   res.send(store.getRecords());
 });
 
+app.get('/recordings', async (req, res) => {
+  res.send(await featureDb.getRecordings());
+});
+
 app.get('/texture', async (req, res) => {
   res.send(await textures.getSimilarityLoop());
 });
@@ -58,7 +62,15 @@ app.get('/features', async (req, res) => {
 const server = app.listen(PORT, async () => {
   await featureDb.connect();
   console.log('open music archive server started at http://localhost:' + PORT);
+  //await featureDb.removeNonClusteredIds();
+  //console.log("done")
+  //console.log(await featureDb.getRecordings())
+
   await initStreamAndSockets();
+
+  //await test.transferAllJsonToFeatureDb('json/');
+
+
   //console.log((await featureDb.getSoundObjectsNewerThan(new Date(Date.now()-(4.1*60*60*1000)))).length);
 
   //addTestRecordSide();

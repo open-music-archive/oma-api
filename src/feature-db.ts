@@ -100,6 +100,10 @@ export async function getCluster(clusteringID: string, index: number): Promise<C
 
 // QUERY FUNCTIONS
 
+export async function getRecordings(): Promise<{}> {
+  return (await db.collection(RECORDINGS).find({}).project({"soundObjects": 0})).toArray();
+}
+
 export function getAwesomeLoop(): Promise<{}> {
   return db.collection(AWESOME_LOOPS).aggregate(
     [{ $sample: { size: 1 } }]
@@ -226,6 +230,7 @@ function getMax(field: string, count: number): Object[] {
 }
 
 function getSorted(field: string, direction: number, count: number): Object[] {
+  count = count <= 0 ? 1: count;
   const sort = {};
   sort[field] = direction;
   return [
@@ -235,6 +240,7 @@ function getSorted(field: string, direction: number, count: number): Object[] {
 }
 
 function getClosest(field: string, value: number, count: number): Object[] {
+  count = count <= 0 ? 1: count;
   return [
     { $addFields: { delta: { $abs: { $subtract: [ "$"+field, value ] } } } },
     { $sort: { delta: 1 } },

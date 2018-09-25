@@ -27,7 +27,7 @@ export function getCrackling() {
 
 export function getGrowing() {
   return new GrowingComposition({
-    updateInterval: 10000,
-    //updateIntervalRange: [2000, 5000]
+    //updateInterval: 10000,
+    updateIntervalRange: [7000, 11000]
   })
 }

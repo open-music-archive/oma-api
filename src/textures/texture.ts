@@ -23,7 +23,7 @@ export interface Param {
 export interface TextureOptions {
   loop?: boolean,
   repeat?: number,
-  duration?: number,
+  durationRange?: [number, number],
   objects?: DbSoundObject[],
   soundMaterialType?: SoundMaterial,
   minSoundMaterialSize?: number,
@@ -87,8 +87,11 @@ export abstract class Texture {
           const fromDate = this.options.prioritizeRecent ? this.getDate(t) : undefined;
           const part = this.options.prioritizeRecent && (t < MAX_TRIES-1) ?
             _.floor((size-material.length)/2) : size-material.length;
-          const newMaterial = await this.getSoundMaterial(part, fromDate);
-          material = material.concat(newMaterial);
+          if (part > 0) {
+            const newMaterial = await this.getSoundMaterial(part, fromDate);
+            material = material.concat(newMaterial);
+            //console.log(fromDate, part, material.length)
+          }
         }
       });
       this.options.objects = material;
@@ -162,8 +165,8 @@ export abstract class Texture {
       await this.setRandomParam(dymo, uris.HEIGHT, [-0.5, 0.5]);
     }
     if (this.options.effects) {
-      await this.setRandomParam(dymo, uris.REVERB, [0, 0.3], 0.5);
-      await this.setRandomParam(dymo, uris.DELAY, [0, 0.3], 0.3);
+      await this.setRandomParam(dymo, uris.REVERB, [0, 0.4], 0.4);
+      await this.setRandomParam(dymo, uris.DELAY, [0, 0.5], 0.3);
     }
     return dymo;
   }
@@ -199,7 +202,8 @@ export class RandomConcat extends Texture {
 export class RandomOnset extends Texture {
 
   protected async generate(): Promise<string> {
-    const dur = this.options.duration ? this.options.duration : 4*Math.random()+2;
+    const dr = this.options.durationRange ? this.options.durationRange : [2,4];
+    const dur = (Math.random()*(dr[1]-dr[0]))+dr[0];
     const sequence = await this.dymoGen.addDymo(null, null, uris.SEQUENCE);
     //only approximate...
     await this.dymoGen.setDymoParameter(sequence, uris.DURATION, dur);
