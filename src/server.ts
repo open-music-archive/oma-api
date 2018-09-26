@@ -1,7 +1,8 @@
+import * as _ from 'lodash';
 import * as express from 'express';
 import * as bodyParser from 'body-parser';
 import * as socketIO from 'socket.io';
-import * as store from './store';
+//import * as store from './store';
 import * as featureDb from './feature-db';
 import { RecordSide } from './types';
 import { DbClustering, ClusteringParameters } from './db-types';
@@ -30,7 +31,7 @@ app.get('/', async (req, res) => {
 app.post('/record', async (req, res) => {
   const side = <RecordSide>req.body;
   await featureDb.insertRecordSide(side);
-  await store.addRecordSide(side);
+  //await store.addRecordSide(side);
   res.send();
 });
 
@@ -39,9 +40,9 @@ app.post('/clustering', async (req, res) => {
   res.send();
 });
 
-app.get('/records', (req, res) => {
+/*app.get('/records', (req, res) => {
   res.send(store.getRecords());
-});
+});*/
 
 app.get('/recordings', async (req, res) => {
   res.send(await featureDb.getRecordings());
@@ -66,9 +67,12 @@ const server = app.listen(PORT, async () => {
   //console.log("done")
   //console.log(await featureDb.getRecordings())
 
-  await initStreamAndSockets();
+  //await initStreamAndSockets();
 
   //await test.transferAllJsonToFeatureDb('json/');
+
+  let obj = _.sample(await featureDb.getLoudestSoundObjects(100));
+  console.log((await featureDb.getSimilarSoundObjects(obj, undefined, 2)).length);
 
 
   //console.log((await featureDb.getSoundObjectsNewerThan(new Date(Date.now()-(4.1*60*60*1000)))).length);

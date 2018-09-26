@@ -4,7 +4,7 @@ import { URL } from './config';
 import { RecordSide, Clustering, SoundObject } from './types';
 import { DbSoundObject, DbSoundObjectFeatures, DbClustering, Cluster, ClusteringParameters } from './db-types';
 import { toDbFeatures, objectIdWithTimestamp } from './util';
-import { classify } from './clusterer';
+import { Clusterer } from './clusterer';
 
 const RECORDINGS = "recordings";
 const FEATURES = "soundObjectFeatures";
@@ -30,19 +30,20 @@ export async function insertRecordSide(side: RecordSide) {
   const recId = await insertRecording(side);
   const docIds = await Promise.all(side.soundObjects
     .map(o => insertFeatures(toDbFeatures(o, recId))));
-  const updated = await updateRecording(recId, docIds);
+  await updateRecording(recId, docIds);
   side.soundObjects.forEach((o,i) => {
-    o.featureGuid = docIds[i].toHexString()
-    classifySoundObject(o);
+    o.featureGuid = docIds[i].toHexString();
   });
+  await classifySoundObjects(side.soundObjects);
 }
 
-async function classifySoundObject(soundObject: SoundObject) {
-  var clusterings = (await getAllClusterings());
-  clusterings.forEach(clustering => {
-    var index = classify(clustering, soundObject);
-    addSoundObjectIDtoCluster(soundObject.featureGuid, clustering._id, index);
-  })
+async function classifySoundObjects(soundObjects: SoundObject[]) {
+  const clusterings = (await getAllClusterings());
+  await clusterings.map(async c => {
+    const indexes = await new Clusterer(c).classify(soundObjects);
+    await Promise.all(soundObjects.map((o,i) =>
+      addSoundObjectIDtoCluster(o.featureGuid, c._id, indexes[i])));
+  });
 }
 
 async function updateRecording(recId: ObjectID, objIds: ObjectID[]): Promise<number> {
@@ -91,7 +92,7 @@ export async function getClustering(clusteringID: string): Promise<Clustering> {
 
 export async function getCluster(clusteringID: string, index: number): Promise<Cluster> {
   var clusters = (await db.collection(CLUSTERS).find({
-    'clusterinID': new ObjectID(clusteringID),
+    'clusteringID': new ObjectID(clusteringID),
     'index': index
   }).toArray());
   // console.log(clusters);
@@ -123,7 +124,7 @@ export async function getSimilarAudio(audioUri: string): Promise<string> {
   return _.sample(await getSimilarSoundObjects(soundObject)).audioUri;
 }
 
-export async function removeNonClusteredIds() {
+/*export async function removeNonClusteredIds() {
   const idsInClusters: string[] = (await db.collection(CLUSTERINGS).aggregate([
     { $unwind: "$clusters" },
     { $replaceRoot: { newRoot: "$clusters" } },
@@ -133,16 +134,30 @@ export async function removeNonClusteredIds() {
   const oidsInClusters = _.uniq(idsInClusters).map(i => new ObjectID(i));
   return db.collection(FEATURES)
     .remove({_id: {$nin: oidsInClusters}});
-}
+}*/
 
 export async function getCracklingSoundObjects(fromDate?: Date): Promise<DbSoundObject[]> {
   const crackle = await findSoundObjects({"audioUri": {
     "$regex": "0b8dc245-93ba-4a84-a6bd-5ba2cf00dfb7.wav"
   }});
-  return getSimilarSoundObjects(crackle[0], fromDate);
+  return getSimilarSoundObjects(crackle[0], fromDate, 1);
 }
 
-export async function getSimilarSoundObjects(object: DbSoundObject, fromDate?: Date): Promise<DbSoundObject[]> {
+export async function getSimilarSoundObjects(object: DbSoundObject, fromDate?: Date, clusteringIndex = 0): Promise<DbSoundObject[]> {
+  const clustering = (await getAllClusterings())[clusteringIndex];
+  const aggregate = addFromDateToAggregate([
+    { $match: { clusteringID: clustering._id, signals: object._id.toHexString() } }
+  ], fromDate);
+  const cluster: Cluster = (await db.collection(CLUSTERS).aggregate(aggregate).toArray())[0];
+  //console.log(cluster)
+  if (cluster) {
+    const ids = cluster.signals.map(s => new ObjectID(s));
+    return findSoundObjects({ _id: { $in: ids } });
+  }
+  return [];
+}
+
+/*export async function getSimilarSoundObjects(object: DbSoundObject, fromDate?: Date): Promise<DbSoundObject[]> {
   const aggregate = addFromDateToAggregate([
     { $project: { clusters: {
       $filter: { input: "$clusters", as: "c", cond: {
@@ -159,7 +174,7 @@ export async function getSimilarSoundObjects(object: DbSoundObject, fromDate?: D
     return findSoundObjects({ _id: { $in: ids } });
   }
   return [];
-}
+}*/
 
 export async function getLongAndShortObjects(long: number, short: number, fromDate?: Date): Promise<DbSoundObject[]> {
   const longs = _.sampleSize(await getLongestSoundObjects(NUM_OBJECTS/50, fromDate), long);
