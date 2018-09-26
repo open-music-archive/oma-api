@@ -67,12 +67,12 @@ const server = app.listen(PORT, async () => {
   //console.log("done")
   //console.log(await featureDb.getRecordings())
 
-  //await initStreamAndSockets();
+  await initStreamAndSockets();
 
   //await test.transferAllJsonToFeatureDb('json/');
 
-  let obj = _.sample(await featureDb.getLoudestSoundObjects(100));
-  console.log((await featureDb.getSimilarSoundObjects(obj, undefined, 2)).length);
+  //let obj = _.sample(await featureDb.getLoudestSoundObjects(100));
+  //console.log((await featureDb.getSimilarSoundObjects(obj, undefined, 2)).length);
 
 
   //console.log((await featureDb.getSoundObjectsNewerThan(new Date(Date.now()-(4.1*60*60*1000)))).length);
