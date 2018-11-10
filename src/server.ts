@@ -91,17 +91,26 @@ const server = app.listen(PORT, async () => {
 
 async function initStreamAndSockets() {
 
-  composition = streams.getGrowing();
-
   const io = socketIO.listen(server);
-  //io.origins(['http://localhost:4200', 'https://open-music-archive.github.io/', 'https://www.playitagainuseittogether.com']);
 
   io.on('connection', async socket => {
     console.log('client connected, now', (<any>io.engine).clientsCount);
-    //socket.emit('live-stream', "TEXT")
-    composition.getTextureStream()
-      .subscribe(async t => socket.emit('live-stream', await t.getJsonld()));
-    socket.on('disconnect', () =>
-      console.log('client disconnected, now', (<any>io.engine).clientsCount));
+    subscribeToComposition(socket);
+
+    socket.on('disconnect', () => {
+      const remaining = (<any>io.engine).clientsCount;
+      if (remaining == 0) {
+        composition = null;
+      }
+      console.log('client disconnected, now', remaining);
+    });
   });
+}
+
+function subscribeToComposition(socket: socketIO.Socket) {
+  if (!composition) {
+    composition = streams.getGrowing();
+  }
+  composition.getTextureStream().subscribe(async t =>
+    socket.emit('live-stream', await t.getJsonld()));
 }
