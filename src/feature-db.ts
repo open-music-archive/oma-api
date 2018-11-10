@@ -119,6 +119,11 @@ export async function getRandomSoundObjects(count: number, fromDate?: Date): Pro
   return aggregateSoundObjects([{ $sample: { size: count } }], fromDate);
 }
 
+export async function getSimilarObjectsFromAudio(audioUri: string, count: number): Promise<DbSoundObject[]> {
+  const soundObject = (await findSoundObjects({ audioUri: audioUri }))[0];
+  return _.sampleSize(await getSimilarSoundObjects(soundObject), count);
+}
+
 export async function getSimilarAudio(audioUri: string): Promise<string> {
   const soundObject = (await findSoundObjects({ audioUri: audioUri }))[0];
   return _.sample(await getSimilarSoundObjects(soundObject)).audioUri;

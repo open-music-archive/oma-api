@@ -60,6 +60,17 @@ app.get('/features', async (req, res) => {
   res.send(await featureDb.getAllNormalFeatures());
 });
 
+app.get('/random', async (req, res) => {
+  const count = req.query.count ? Number(req.query.count) : 10;
+  res.send(await featureDb.getRandomSoundObjects(count));
+});
+
+app.get('/similar', async (req, res) => {
+  const uri = req.query.uri;
+  const count = req.query.count ? Number(req.query.count) : 10;
+  res.send(await featureDb.getSimilarObjectsFromAudio(uri, count));
+});
+
 const server = app.listen(PORT, async () => {
   await featureDb.connect();
   console.log('open music archive server started at http://localhost:' + PORT);
